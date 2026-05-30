@@ -1,127 +1,121 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 
-// ============================================================
-// STORAGE HELPERS
-// ============================================================
-const STORAGE_KEYS = {
-  hewan: "qp_hewan",
-  mudhohi: "qp_mudhohi",
-  mustahiq: "qp_mustahiq",
-  sesi: "qp_sesi",
-  keuangan: "qp_keuangan",
-  settings: "qp_settings",
+const COLORS = {
+  emerald: { primary: "#059669", light: "#d1fae5", dark: "#065f46", mid: "#10b981" },
+  gold: { primary: "#d97706", light: "#fef3c7", dark: "#78350f", mid: "#f59e0b" },
+  white: "#ffffff",
+  gray: { 50: "#f9fafb", 100: "#f3f4f6", 200: "#e5e7eb", 300: "#d1d5db", 400: "#9ca3af", 500: "#6b7280", 600: "#4b5563", 700: "#374151", 800: "#1f2937", 900: "#111827" }
 };
 
-function useLocalStorage(key, initialData) {
-  const [data, setData] = useState(() => {
-    try {
-      const stored = localStorage.getItem(key);
-      return stored ? JSON.parse(stored) : initialData;
-    } catch { return initialData; }
-  });
-  const set = useCallback((val) => {
-    setData(prev => {
-      const next = typeof val === "function" ? val(prev) : val;
-      try { localStorage.setItem(key, JSON.stringify(next)); } catch {}
-      return next;
-    });
-  }, [key]);
-  return [data, set];
-}
-
-// ============================================================
-// INITIAL DUMMY DATA
-// ============================================================
-const INIT_HEWAN = [
-  { id: "H001", kode: "SAP-001", jenis: "Sapi", berat: 320, harga: 18500000, lokasi: "Kandang A", status: "Siap Disembelih", kelompok: "KEL-001", catatan: "" },
-  { id: "H002", kode: "SAP-002", jenis: "Sapi", berat: 290, harga: 17000000, lokasi: "Kandang A", status: "Disembelih", kelompok: "KEL-002", catatan: "" },
-  { id: "H003", kode: "KBG-001", jenis: "Kambing", berat: 35, harga: 3200000, lokasi: "Kandang B", status: "Dipotong", kelompok: "KEL-003", catatan: "" },
-  { id: "H004", kode: "KBG-002", jenis: "Kambing", berat: 42, harga: 3800000, lokasi: "Kandang B", status: "Terdaftar", kelompok: "KEL-004", catatan: "" },
-  { id: "H005", kode: "SAP-003", jenis: "Sapi", berat: 310, harga: 18000000, lokasi: "Kandang A", status: "Selesai", kelompok: "KEL-005", catatan: "" },
-];
-const INIT_MUDHOHI = [
-  { id: "M001", nama: "H. Ahmad Fauzi", wa: "08123456789", alamat: "Jl. Mawar No. 12", jenis: "Sapi", namaAtas: "Almh. Siti Aminah", kelompok: "KEL-001", pembayaran: "Lunas", nominal: 2642857 },
-  { id: "M002", nama: "Budi Santoso", wa: "08234567890", alamat: "Jl. Melati No. 5", jenis: "Kambing", namaAtas: "Budi Santoso", kelompok: "KEL-003", pembayaran: "Lunas", nominal: 3200000 },
-  { id: "M003", nama: "Ibu Sari Dewi", wa: "08345678901", alamat: "Jl. Anggrek No. 8", jenis: "Sapi", namaAtas: "Keluarga Besar Santoso", kelompok: "KEL-001", pembayaran: "DP", nominal: 1000000 },
-  { id: "M004", nama: "Pak Hendra", wa: "08456789012", alamat: "Jl. Kenanga No. 3", jenis: "Sapi", namaAtas: "Hendra & Keluarga", kelompok: "KEL-002", pembayaran: "Lunas", nominal: 2428571 },
-  { id: "M005", nama: "Ustaz Ridwan", wa: "08567890123", alamat: "Komplek Masjid", jenis: "Kambing", namaAtas: "Ustaz Ridwan", kelompok: "KEL-004", pembayaran: "Lunas", nominal: 3800000 },
-];
-const INIT_MUSTAHIQ = [
-  { id: "W001", nama: "Ibu Rohani", kategori: "Fakir Miskin", rt: "001", rw: "003", kupon: "KPN-0001", status: "Belum Diambil", sesi: "S001" },
-  { id: "W002", nama: "Pak Joko", kategori: "Warga Sekitar", rt: "002", rw: "003", kupon: "KPN-0002", status: "Sudah Diambil", sesi: "S001" },
-  { id: "W003", nama: "Nenek Mariyam", kategori: "Fakir Miskin", rt: "001", rw: "004", kupon: "KPN-0003", status: "Belum Diambil", sesi: "S002" },
-  { id: "W004", nama: "Bapak Suparman", kategori: "Warga Sekitar", rt: "003", rw: "003", kupon: "KPN-0004", status: "Sudah Diambil", sesi: "S002" },
-  { id: "W005", nama: "Panitia - Agus", kategori: "Panitia", rt: "-", rw: "-", kupon: "KPN-0005", status: "Sudah Diambil", sesi: "S001" },
-];
-const INIT_SESI = [
-  { id: "S001", nama: "Sesi Pagi A", tanggal: "2025-06-09", jamMulai: "07:00", jamSelesai: "09:00", lokasi: "Halaman Masjid", kuota: 50 },
-  { id: "S002", nama: "Sesi Pagi B", tanggal: "2025-06-09", jamMulai: "09:00", jamSelesai: "11:00", lokasi: "Halaman Masjid", kuota: 50 },
-  { id: "S003", nama: "Sesi Siang", tanggal: "2025-06-09", jamMulai: "13:00", jamSelesai: "15:00", lokasi: "Aula Masjid", kuota: 50 },
-];
-const INIT_KEUANGAN = [
-  { id: "K001", tipe: "Pemasukan", kategori: "Iuran Mudhohi", keterangan: "Pembayaran sapi KEL-001", jumlah: 18500000, tanggal: "2025-05-15" },
-  { id: "K002", tipe: "Pemasukan", kategori: "Iuran Mudhohi", keterangan: "Pembayaran sapi KEL-002", jumlah: 17000000, tanggal: "2025-05-16" },
-  { id: "K003", tipe: "Pengeluaran", kategori: "Pembelian Hewan", keterangan: "Beli sapi 3 ekor", jumlah: 53500000, tanggal: "2025-05-18" },
-  { id: "K004", tipe: "Pengeluaran", kategori: "Perlengkapan", keterangan: "Plastik & tali", jumlah: 1500000, tanggal: "2025-05-19" },
-  { id: "K005", tipe: "Pemasukan", kategori: "Donasi", keterangan: "Donasi Bpk H. Mahmud", jumlah: 5000000, tanggal: "2025-05-20" },
-];
-const INIT_SETTINGS = { namaLembaga: "Masjid Al-Ikhlas", ketua: "H. Ahmad Fauzi", wa: "0812-3456-7890", tanggal: "2025-06-09", lokasi: "Lapangan Masjid Al-Ikhlas" };
-
-// ============================================================
-// DESIGN TOKENS
-// ============================================================
-const C = {
-  em: "#059669", emL: "#d1fae5", emD: "#065f46", emM: "#10b981",
-  gold: "#d97706", goldL: "#fef3c7", goldD: "#78350f", goldM: "#f59e0b",
-  g50: "#f9fafb", g100: "#f3f4f6", g200: "#e5e7eb", g300: "#d1d5db",
-  g400: "#9ca3af", g500: "#6b7280", g600: "#4b5563", g700: "#374151", g800: "#1f2937", g900: "#111827",
-  blue: "#3b82f6", blueL: "#dbeafe", purple: "#8b5cf6", purpleL: "#ede9fe",
-  red: "#ef4444", redL: "#fee2e2", sky: "#0ea5e9", skyL: "#e0f2fe",
+const dummyStats = {
+  totalHewan: 24, terdaftar: 5, siapSembelih: 8, disembelih: 6, dipotong: 3, selesai: 2,
+  totalMudhohi: 134, totalMustahiq: 312, totalKupon: 312, kuponScan: 187, kuponBelum: 125,
+  progresDistribusi: 60, totalPemasukan: 185000000, totalPengeluaran: 142000000
 };
 
-// ============================================================
-// UTILS
-// ============================================================
-function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
-function fRp(n) { return "Rp " + Number(n || 0).toLocaleString("id-ID"); }
-function fDate(d) { if (!d) return "-"; try { return new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }); } catch { return d; } }
+const dummyHewan = [
+  { id: "H001", kode: "SAP-001", jenis: "Sapi", berat: 320, harga: 18500000, lokasi: "Kandang A", status: "Siap Disembelih", kelompok: "KEL-001" },
+  { id: "H002", kode: "SAP-002", jenis: "Sapi", berat: 290, harga: 17000000, lokasi: "Kandang A", status: "Disembelih", kelompok: "KEL-002" },
+  { id: "H003", kode: "KBG-001", jenis: "Kambing", berat: 35, harga: 3200000, lokasi: "Kandang B", status: "Dipotong", kelompok: "KEL-003" },
+  { id: "H004", kode: "KBG-002", jenis: "Kambing", berat: 42, harga: 3800000, lokasi: "Kandang B", status: "Terdaftar", kelompok: "KEL-004" },
+  { id: "H005", kode: "SAP-003", jenis: "Sapi", berat: 310, harga: 18000000, lokasi: "Kandang A", status: "Selesai", kelompok: "KEL-005" },
+];
 
-const STATUS_COLORS = {
-  "Terdaftar": { bg: C.blueL, tx: "#1e40af" },
-  "Siap Disembelih": { bg: C.goldL, tx: C.goldD },
-  "Disembelih": { bg: C.redL, tx: "#991b1b" },
-  "Dikuliti": { bg: "#fce7f3", tx: "#9d174d" },
-  "Dipotong": { bg: C.purpleL, tx: "#4c1d95" },
-  "Dikemas": { bg: C.emL, tx: C.emD },
-  "Selesai": { bg: C.emL, tx: C.emD },
-  "Lunas": { bg: C.emL, tx: C.emD },
-  "DP": { bg: C.goldL, tx: C.goldD },
-  "Belum Dibayar": { bg: C.redL, tx: "#991b1b" },
-  "Belum Diambil": { bg: C.goldL, tx: C.goldD },
-  "Sudah Diambil": { bg: C.emL, tx: C.emD },
-  "Batal": { bg: C.redL, tx: "#991b1b" },
+const dummyMudhohi = [
+  { id: "M001", nama: "H. Ahmad Fauzi", wa: "08123456789", alamat: "Jl. Mawar No. 12", jenis: "Sapi", namaAtas: "Almh. Siti Aminah", kelompok: "KEL-001", pembayaran: "Lunas" },
+  { id: "M002", nama: "Budi Santoso", wa: "08234567890", alamat: "Jl. Melati No. 5", jenis: "Kambing", namaAtas: "Budi Santoso", kelompok: "KEL-003", pembayaran: "Lunas" },
+  { id: "M003", nama: "Ibu Sari Dewi", wa: "08345678901", alamat: "Jl. Anggrek No. 8", jenis: "Sapi", namaAtas: "Keluarga Besar Santoso", kelompok: "KEL-001", pembayaran: "DP" },
+  { id: "M004", nama: "Pak Hendra", wa: "08456789012", alamat: "Jl. Kenanga No. 3", jenis: "Sapi", namaAtas: "Hendra & Keluarga", kelompok: "KEL-002", pembayaran: "Lunas" },
+  { id: "M005", nama: "Ustaz Ridwan", wa: "08567890123", alamat: "Komplek Masjid", jenis: "Kambing", namaAtas: "Ustaz Ridwan", kelompok: "KEL-004", pembayaran: "Lunas" },
+];
+
+const dummyMustahiq = [
+  { id: "W001", nama: "Ibu Rohani", kategori: "Fakir Miskin", rt: "001", rw: "003", kupon: "KPN-0001", status: "Belum Diambil" },
+  { id: "W002", nama: "Pak Joko", kategori: "Warga Sekitar", rt: "002", rw: "003", kupon: "KPN-0002", status: "Sudah Diambil" },
+  { id: "W003", nama: "Nenek Mariyam", kategori: "Fakir Miskin", rt: "001", rw: "004", kupon: "KPN-0003", status: "Belum Diambil" },
+  { id: "W004", nama: "Bapak Suparman", kategori: "Warga Sekitar", rt: "003", rw: "003", kupon: "KPN-0004", status: "Sudah Diambil" },
+  { id: "W005", nama: "Panitia - Agus", kategori: "Panitia", rt: "-", rw: "-", kupon: "KPN-0005", status: "Sudah Diambil" },
+];
+
+const dummyKeuangan = [
+  { id: "K001", tipe: "Pemasukan", kategori: "Iuran Mudhohi", keterangan: "Pembayaran sapi KEL-001", jumlah: 18500000, tanggal: "15 Mei 2025" },
+  { id: "K002", tipe: "Pemasukan", kategori: "Iuran Mudhohi", keterangan: "Pembayaran sapi KEL-002", jumlah: 17000000, tanggal: "16 Mei 2025" },
+  { id: "K003", tipe: "Pengeluaran", kategori: "Pembelian Hewan", keterangan: "Beli sapi 3 ekor", jumlah: 53500000, tanggal: "18 Mei 2025" },
+  { id: "K004", tipe: "Pengeluaran", kategori: "Perlengkapan", keterangan: "Plastik & tali", jumlah: 1500000, tanggal: "19 Mei 2025" },
+  { id: "K005", tipe: "Pemasukan", kategori: "Donasi", keterangan: "Donasi Bpk H. Mahmud", jumlah: 5000000, tanggal: "20 Mei 2025" },
+];
+
+const dummySesi = [
+  { id: "S001", nama: "Sesi Pagi A", tanggal: "9 Jun 2025", jamMulai: "07:00", jamSelesai: "09:00", lokasi: "Halaman Masjid", kuota: 50, terisi: 45 },
+  { id: "S002", nama: "Sesi Pagi B", tanggal: "9 Jun 2025", jamMulai: "09:00", jamSelesai: "11:00", lokasi: "Halaman Masjid", kuota: 50, terisi: 50 },
+  { id: "S003", nama: "Sesi Siang", tanggal: "9 Jun 2025", jamMulai: "13:00", jamSelesai: "15:00", lokasi: "Aula Masjid", kuota: 50, terisi: 30 },
+];
+
+const statusColors = {
+  "Terdaftar": { bg: "#dbeafe", text: "#1e40af" },
+  "Siap Disembelih": { bg: "#fef3c7", text: "#92400e" },
+  "Disembelih": { bg: "#fee2e2", text: "#991b1b" },
+  "Dikuliti": { bg: "#fce7f3", text: "#9d174d" },
+  "Dipotong": { bg: "#ede9fe", text: "#4c1d95" },
+  "Dikemas": { bg: "#d1fae5", text: "#065f46" },
+  "Selesai": { bg: "#d1fae5", text: "#065f46" },
+  "Lunas": { bg: "#d1fae5", text: "#065f46" },
+  "DP": { bg: "#fef3c7", text: "#92400e" },
+  "Belum Diambil": { bg: "#fef3c7", text: "#92400e" },
+  "Sudah Diambil": { bg: "#d1fae5", text: "#065f46" },
+  "Batal": { bg: "#fee2e2", text: "#991b1b" },
 };
 
-function Badge({ s }) {
-  const c = STATUS_COLORS[s] || { bg: C.g100, tx: C.g700 };
-  return <span style={{ background: c.bg, color: c.tx, padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", display: "inline-block" }}>{s}</span>;
-}
-
-// ============================================================
-// UI PRIMITIVES
-// ============================================================
-function Modal({ title, onClose, children, wide }) {
-  useEffect(() => {
-    const h = (e) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [onClose]);
+function Badge({ status }) {
+  const c = statusColors[status] || { bg: "#f3f4f6", text: "#374151" };
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
-      <div style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: wide ? 680 : 520, maxHeight: "90vh", overflow: "auto", boxShadow: "0 24px 80px rgba(0,0,0,0.2)" }} onClick={e => e.stopPropagation()}>
-        <div style={{ padding: "20px 24px", borderBottom: `1px solid ${C.g200}`, display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "#fff", zIndex: 1 }}>
-          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: C.g800 }}>{title}</h3>
-          <button onClick={onClose} style={{ background: C.g100, border: "none", width: 32, height: 32, borderRadius: "50%", cursor: "pointer", fontSize: 18, color: C.g500, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+    <span style={{ background: c.bg, color: c.text, padding: "2px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" }}>
+      {status}
+    </span>
+  );
+}
+
+function formatRupiah(n) {
+  return "Rp " + n.toLocaleString("id-ID");
+}
+
+function StatCard({ label, value, icon, color, sub }) {
+  return (
+    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, padding: "18px 20px", display: "flex", flexDirection: "column", gap: 6, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <span style={{ fontSize: 13, color: COLORS.gray[500], fontWeight: 500 }}>{label}</span>
+        <span style={{ fontSize: 22, background: color + "20", padding: "6px 8px", borderRadius: 10 }}>{icon}</span>
+      </div>
+      <div style={{ fontSize: 28, fontWeight: 700, color: COLORS.gray[800] }}>{value}</div>
+      {sub && <div style={{ fontSize: 12, color: COLORS.gray[400] }}>{sub}</div>}
+    </div>
+  );
+}
+
+function ProgressBar({ value, max, color }) {
+  const pct = Math.round((value / max) * 100);
+  return (
+    <div style={{ width: "100%" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+        <span style={{ fontSize: 12, color: COLORS.gray[500] }}>Progres Distribusi</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: color }}>{pct}%</span>
+      </div>
+      <div style={{ background: COLORS.gray[100], borderRadius: 99, height: 10, overflow: "hidden" }}>
+        <div style={{ width: pct + "%", height: "100%", background: `linear-gradient(90deg, ${color}, ${COLORS.emerald.mid})`, borderRadius: 99, transition: "width 0.8s ease" }} />
+      </div>
+    </div>
+  );
+}
+
+function Modal({ title, onClose, children }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      onClick={onClose}>
+      <div style={{ background: "#fff", borderRadius: 18, width: "100%", maxWidth: 520, maxHeight: "80vh", overflow: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}
+        onClick={e => e.stopPropagation()}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: COLORS.gray[800] }}>{title}</h3>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: COLORS.gray[400], lineHeight: 1 }}>×</button>
         </div>
         <div style={{ padding: "20px 24px" }}>{children}</div>
       </div>
@@ -130,1183 +124,853 @@ function Modal({ title, onClose, children, wide }) {
 }
 
 function Toast({ msg, type, onClose }) {
-  useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, [onClose]);
-  const bg = type === "success" ? C.em : type === "error" ? C.red : C.gold;
-  const icon = type === "success" ? "✓" : type === "error" ? "✕" : "ℹ";
+  useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, []);
+  const bg = type === "success" ? COLORS.emerald.primary : type === "error" ? "#ef4444" : COLORS.gold.primary;
   return (
-    <div style={{ background: bg, color: "#fff", padding: "13px 18px", borderRadius: 14, fontSize: 14, fontWeight: 500, boxShadow: "0 6px 24px rgba(0,0,0,0.18)", display: "flex", gap: 10, alignItems: "center", minWidth: 260, animation: "slideUp 0.3s ease" }}>
-      <span style={{ fontSize: 16, fontWeight: 800 }}>{icon}</span>
-      <span style={{ flex: 1 }}>{msg}</span>
-      <button onClick={onClose} style={{ background: "rgba(255,255,255,0.2)", border: "none", color: "#fff", cursor: "pointer", borderRadius: 6, width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+    <div style={{ position: "fixed", bottom: 24, right: 24, background: bg, color: "#fff", padding: "12px 20px", borderRadius: 12, fontSize: 14, fontWeight: 500, zIndex: 99999, boxShadow: "0 4px 20px rgba(0,0,0,0.2)", display: "flex", gap: 10, alignItems: "center" }}>
+      {type === "success" ? "✓" : type === "error" ? "✕" : "ℹ"} {msg}
+      <button onClick={onClose} style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", marginLeft: 4 }}>×</button>
     </div>
   );
 }
 
-function Inp({ label, value, onChange, type = "text", placeholder, required, options, textarea, min, step }) {
-  const s = { width: "100%", padding: "10px 14px", borderRadius: 10, border: `1px solid ${C.g200}`, fontSize: 14, boxSizing: "border-box", background: "#fff", color: C.g800, outline: "none", fontFamily: "inherit" };
-  return (
-    <div style={{ marginBottom: 14 }}>
-      {label && <label style={{ fontSize: 13, fontWeight: 600, color: C.g600, display: "block", marginBottom: 5 }}>{label}{required && <span style={{ color: C.red }}> *</span>}</label>}
-      {options ? (
-        <select value={value} onChange={e => onChange(e.target.value)} style={s}>
-          <option value="">-- Pilih --</option>
-          {options.map(o => <option key={o} value={o}>{o}</option>)}
-        </select>
-      ) : textarea ? (
-        <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={{ ...s, minHeight: 80, resize: "vertical" }} />
-      ) : (
-        <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={s} min={min} step={step} />
-      )}
-    </div>
-  );
-}
-
-function Btn({ children, onClick, color = C.em, outline, small, full, disabled }) {
-  const bg = outline ? "transparent" : disabled ? C.g300 : color;
-  const tx = outline ? color : "#fff";
-  return (
-    <button onClick={disabled ? undefined : onClick} style={{
-      background: bg, color: tx, border: outline ? `2px solid ${color}` : "none",
-      borderRadius: 10, padding: small ? "6px 14px" : "10px 20px", cursor: disabled ? "not-allowed" : "pointer",
-      fontSize: small ? 13 : 14, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 6,
-      width: full ? "100%" : "auto", justifyContent: full ? "center" : "flex-start", opacity: disabled ? 0.6 : 1,
-      transition: "opacity 0.15s, transform 0.1s", fontFamily: "inherit",
-      whiteSpace: "nowrap"
-    }}
-      onMouseDown={e => { if (!disabled) e.currentTarget.style.transform = "scale(0.97)"; }}
-      onMouseUp={e => { e.currentTarget.style.transform = "scale(1)"; }}>
-      {children}
-    </button>
-  );
-}
-
-function Card({ children, style }) {
-  return <div style={{ background: "#fff", borderRadius: 16, border: `1px solid ${C.g200}`, overflow: "hidden", ...style }}>{children}</div>;
-}
-
-function EmptyState({ icon, title, desc, action }) {
-  return (
-    <div style={{ textAlign: "center", padding: "60px 20px", color: C.g400 }}>
-      <div style={{ fontSize: 56, marginBottom: 16 }}>{icon}</div>
-      <h3 style={{ fontSize: 18, fontWeight: 700, color: C.g600, margin: "0 0 8px" }}>{title}</h3>
-      <p style={{ fontSize: 14, margin: "0 0 20px" }}>{desc}</p>
-      {action}
-    </div>
-  );
-}
-
-function ConfirmModal({ msg, onConfirm, onClose }) {
-  return (
-    <Modal title="Konfirmasi" onClose={onClose}>
-      <p style={{ fontSize: 15, color: C.g600, margin: "0 0 24px" }}>{msg}</p>
-      <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-        <Btn onClick={onClose} outline color={C.g400}>Batal</Btn>
-        <Btn onClick={() => { onConfirm(); onClose(); }} color={C.red}>Ya, Hapus</Btn>
-      </div>
-    </Modal>
-  );
-}
-
-// ============================================================
-// SIDEBAR
-// ============================================================
-const MENUS = [
-  { key: "dashboard", label: "Dashboard", icon: "⊞" },
-  { key: "hewan", label: "Hewan Qurban", icon: "🐄" },
-  { key: "mudhohi", label: "Mudhohi", icon: "👥" },
+const MENU_ITEMS = [
+  { key: "dashboard", label: "Dashboard", icon: "🏠" },
+  { key: "mudhohi", label: "Mudhohi", icon: "🐄" },
+  { key: "hewan", label: "Hewan Qurban", icon: "🐑" },
   { key: "mustahiq", label: "Mustahiq", icon: "🤲" },
   { key: "sesi", label: "Sesi Distribusi", icon: "📅" },
-  { key: "scan", label: "Scan Kupon", icon: "🔍" },
+  { key: "scan", label: "Scan Kupon", icon: "📷" },
   { key: "keuangan", label: "Laporan RAB", icon: "💰" },
   { key: "pengaturan", label: "Pengaturan", icon: "⚙️" },
 ];
 
-function Sidebar({ active, setActive, mobile, onClose }) {
-  const w = mobile ? "100%" : 230;
+function Sidebar({ active, setActive, collapsed, setCollapsed }) {
   return (
-    <div style={{ width: w, minHeight: "100vh", background: `linear-gradient(170deg, ${C.emD} 0%, #042b1e 100%)`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
-      <div style={{ padding: "22px 20px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-        <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: -0.5 }}>
-          <span style={{ color: C.goldM }}>Qurban</span>Pro
-        </div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Manajemen Idul Adha 1446H</div>
+    <div style={{
+      width: collapsed ? 64 : 240, minHeight: "100vh", background: `linear-gradient(160deg, ${COLORS.emerald.dark} 0%, #0a3d2b 100%)`,
+      display: "flex", flexDirection: "column", transition: "width 0.3s", flexShrink: 0, position: "relative", zIndex: 100
+    }}>
+      <div style={{ padding: collapsed ? "20px 12px" : "20px 20px", borderBottom: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", gap: 10 }}>
+        {!collapsed && (
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", letterSpacing: -0.5 }}>
+              <span style={{ color: COLORS.gold.mid }}>Qurban</span>Pro
+            </div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 1 }}>Manajemen Idul Adha</div>
+          </div>
+        )}
+        {collapsed && <span style={{ fontSize: 20 }}>🌙</span>}
+        <button onClick={() => setCollapsed(!collapsed)}
+          style={{ marginLeft: "auto", background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", borderRadius: 8, padding: "4px 8px", cursor: "pointer", fontSize: 16 }}>
+          {collapsed ? "→" : "←"}
+        </button>
       </div>
-      <nav style={{ flex: 1, padding: "10px 8px" }}>
-        {MENUS.map(m => (
-          <button key={m.key} onClick={() => { setActive(m.key); onClose && onClose(); }}
-            style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: active === m.key ? "rgba(255,255,255,0.12)" : "transparent", border: "none", borderRadius: 10, color: active === m.key ? "#fff" : "rgba(255,255,255,0.6)", cursor: "pointer", fontSize: 14, fontWeight: active === m.key ? 700 : 400, marginBottom: 1, textAlign: "left", borderLeft: active === m.key ? `3px solid ${C.goldM}` : "3px solid transparent", transition: "all 0.15s", fontFamily: "inherit" }}>
-            <span style={{ fontSize: 17 }}>{m.icon}</span>
-            <span>{m.label}</span>
+      <nav style={{ flex: 1, padding: "12px 8px" }}>
+        {MENU_ITEMS.map(item => (
+          <button key={item.key} onClick={() => setActive(item.key)}
+            style={{
+              width: "100%", display: "flex", alignItems: "center", gap: 12, padding: collapsed ? "10px 12px" : "10px 14px",
+              background: active === item.key ? "rgba(255,255,255,0.15)" : "transparent",
+              border: "none", borderRadius: 10, color: active === item.key ? "#fff" : "rgba(255,255,255,0.65)",
+              cursor: "pointer", fontSize: 14, fontWeight: active === item.key ? 600 : 400,
+              marginBottom: 2, transition: "all 0.15s", textAlign: "left",
+              borderLeft: active === item.key ? `3px solid ${COLORS.gold.mid}` : "3px solid transparent"
+            }}>
+            <span style={{ fontSize: 18, flexShrink: 0 }}>{item.icon}</span>
+            {!collapsed && <span>{item.label}</span>}
           </button>
         ))}
       </nav>
-      <div style={{ padding: "14px 16px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Login sebagai</div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginTop: 2 }}>Admin Panitia</div>
-      </div>
+      {!collapsed && (
+        <div style={{ padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+          <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 14px" }}>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>Login sebagai</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>Admin Panitia</div>
+            <div style={{ fontSize: 11, color: COLORS.gold.mid, marginTop: 2 }}>Masjid Al-Ikhlas</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// ============================================================
-// DASHBOARD
-// ============================================================
-function Dashboard({ hewan, mudhohi, mustahiq, keuangan, setPage }) {
-  const totalPemasukan = keuangan.filter(k => k.tipe === "Pemasukan").reduce((s, k) => s + Number(k.jumlah), 0);
-  const totalPengeluaran = keuangan.filter(k => k.tipe === "Pengeluaran").reduce((s, k) => s + Number(k.jumlah), 0);
-  const kuponDiambil = mustahiq.filter(m => m.status === "Sudah Diambil").length;
-  const pct = mustahiq.length ? Math.round(kuponDiambil / mustahiq.length * 100) : 0;
-
-  const statusList = ["Terdaftar", "Siap Disembelih", "Disembelih", "Dikuliti", "Dipotong", "Dikemas", "Selesai"];
-  const statusCount = statusList.map(s => ({ s, n: hewan.filter(h => h.status === s).length })).filter(x => x.n > 0);
-
+function Dashboard({ toast }) {
+  const stats = dummyStats;
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 900, color: C.g900, margin: 0 }}>Dashboard Qurban 1446 H</h1>
-        <p style={{ fontSize: 13, color: C.g400, margin: "4px 0 0" }}>Masjid Al-Ikhlas — Idul Adha 2025</p>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: COLORS.gray[800], margin: 0 }}>Dashboard Qurban 1446 H</h1>
+        <p style={{ fontSize: 14, color: COLORS.gray[400], marginTop: 4 }}>Masjid Al-Ikhlas — Idul Adha 2025</p>
       </div>
 
-      {/* Stat Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 14, marginBottom: 22 }}>
-        {[
-          { label: "Total Hewan", val: hewan.length, icon: "🐄", col: C.em, sub: `${hewan.filter(h=>h.jenis==="Sapi").length} sapi · ${hewan.filter(h=>h.jenis==="Kambing").length} kambing` },
-          { label: "Total Mudhohi", val: mudhohi.length, icon: "👥", col: C.gold, sub: `${mudhohi.filter(m=>m.pembayaran==="Lunas").length} lunas` },
-          { label: "Total Mustahiq", val: mustahiq.length, icon: "🤲", col: C.purple, sub: `${kuponDiambil} sudah diambil` },
-          { label: "Pemasukan", val: fRp(totalPemasukan), icon: "💚", col: C.em, sub: "Total dana masuk" },
-          { label: "Pengeluaran", val: fRp(totalPengeluaran), icon: "📤", col: C.red, sub: "Total pengeluaran" },
-          { label: "Saldo", val: fRp(totalPemasukan - totalPengeluaran), icon: "💰", col: C.gold, sub: "Saldo akhir" },
-        ].map(s => (
-          <Card key={s.label} style={{ padding: "16px 18px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-              <span style={{ fontSize: 12, color: C.g500, fontWeight: 500 }}>{s.label}</span>
-              <span style={{ fontSize: 20, background: s.col + "18", padding: "5px 7px", borderRadius: 8 }}>{s.icon}</span>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14, marginBottom: 24 }}>
+        <StatCard label="Total Hewan" value={stats.totalHewan} icon="🐄" color={COLORS.emerald.primary} sub="Sapi & Kambing" />
+        <StatCard label="Total Mudhohi" value={stats.totalMudhohi} icon="👥" color={COLORS.gold.primary} sub="Peserta qurban" />
+        <StatCard label="Total Mustahiq" value={stats.totalMustahiq} icon="🤲" color="#8b5cf6" sub="Penerima daging" />
+        <StatCard label="Kupon Terbit" value={stats.totalKupon} icon="🎫" color="#0ea5e9" sub={`${stats.kuponScan} sudah scan`} />
+        <StatCard label="Pemasukan" value={formatRupiah(stats.totalPemasukan)} icon="💚" color={COLORS.emerald.primary} />
+        <StatCard label="Pengeluaran" value={formatRupiah(stats.totalPengeluaran)} icon="🔴" color="#ef4444" />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginBottom: 24 }}>
+        <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", padding: "20px 24px" }}>
+          <h3 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 700, color: COLORS.gray[700] }}>Status Hewan Qurban</h3>
+          {[
+            { label: "Terdaftar", count: 5, color: "#3b82f6" },
+            { label: "Siap Disembelih", count: 8, color: "#f59e0b" },
+            { label: "Disembelih", count: 6, color: "#ef4444" },
+            { label: "Dipotong", count: 3, color: "#8b5cf6" },
+            { label: "Selesai", count: 2, color: COLORS.emerald.primary },
+          ].map(s => (
+            <div key={s.label} style={{ marginBottom: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                <span style={{ fontSize: 13, color: COLORS.gray[600] }}>{s.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: s.color }}>{s.count}</span>
+              </div>
+              <div style={{ height: 6, background: "#f3f4f6", borderRadius: 99 }}>
+                <div style={{ width: (s.count / stats.totalHewan * 100) + "%", height: "100%", background: s.color, borderRadius: 99 }} />
+              </div>
             </div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: C.g900, lineHeight: 1.2 }}>{s.val}</div>
-            <div style={{ fontSize: 11, color: C.g400, marginTop: 4 }}>{s.sub}</div>
-          </Card>
-        ))}
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-        {/* Status Hewan */}
-        <Card style={{ padding: "20px" }}>
-          <h3 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 800, color: C.g700 }}>Status Hewan Qurban</h3>
-          {hewan.length === 0 ? <EmptyState icon="🐄" title="Belum ada hewan" desc="Tambah data hewan qurban" /> : (
-            statusList.map(s => {
-              const n = hewan.filter(h => h.status === s).length;
-              if (!n && hewan.length > 0) return null;
-              const c = STATUS_COLORS[s] || { bg: C.g100, tx: C.g500 };
-              return (
-                <div key={s} style={{ marginBottom: 10 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ fontSize: 13, color: C.g600 }}>{s}</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: c.tx }}>{n}</span>
-                  </div>
-                  <div style={{ height: 6, background: C.g100, borderRadius: 99 }}>
-                    <div style={{ width: hewan.length ? (n / hewan.length * 100) + "%" : "0%", height: "100%", background: c.tx, borderRadius: 99, transition: "width 0.8s ease" }} />
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </Card>
-
-        {/* Distribusi Kupon */}
-        <Card style={{ padding: "20px" }}>
-          <h3 style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 800, color: C.g700 }}>Distribusi Kupon</h3>
-          <div style={{ display: "flex", justifyContent: "center", margin: "8px 0" }}>
-            <svg viewBox="0 0 120 120" style={{ width: 120, height: 120 }}>
-              <circle cx="60" cy="60" r="48" fill="none" stroke={C.g100} strokeWidth="14" />
-              <circle cx="60" cy="60" r="48" fill="none" stroke={C.em} strokeWidth="14"
-                strokeDasharray={`${2 * Math.PI * 48 * (pct / 100)} ${2 * Math.PI * 48 * (1 - pct / 100)}`}
-                strokeDashoffset={2 * Math.PI * 48 * 0.25} strokeLinecap="round" transform="rotate(-90 60 60)" style={{ transition: "stroke-dasharray 1s ease" }} />
-              <text x="60" y="56" textAnchor="middle" fontSize="20" fontWeight="900" fill={C.emD}>{pct}%</text>
-              <text x="60" y="71" textAnchor="middle" fontSize="9" fill={C.g400}>sudah diambil</text>
+          ))}
+        </div>
+        <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", padding: "20px 24px" }}>
+          <h3 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 700, color: COLORS.gray[700] }}>Distribusi Kupon</h3>
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", position: "relative", height: 140 }}>
+            <svg viewBox="0 0 120 120" style={{ width: 130, height: 130 }}>
+              <circle cx="60" cy="60" r="48" fill="none" stroke="#f3f4f6" strokeWidth="12" />
+              <circle cx="60" cy="60" r="48" fill="none" stroke={COLORS.emerald.primary} strokeWidth="12"
+                strokeDasharray={`${2 * Math.PI * 48 * 0.6} ${2 * Math.PI * 48 * 0.4}`}
+                strokeDashoffset={2 * Math.PI * 48 * 0.25} strokeLinecap="round" transform="rotate(-90 60 60)" />
+              <text x="60" y="55" textAnchor="middle" fontSize="18" fontWeight="800" fill={COLORS.emerald.dark}>60%</text>
+              <text x="60" y="70" textAnchor="middle" fontSize="9" fill={COLORS.gray[400]}>sudah diambil</text>
             </svg>
           </div>
-          <div style={{ display: "flex", justifyContent: "space-around" }}>
+          <div style={{ display: "flex", justifyContent: "space-around", marginTop: 8 }}>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 24, fontWeight: 900, color: C.em }}>{kuponDiambil}</div>
-              <div style={{ fontSize: 11, color: C.g400 }}>Sudah Diambil</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: COLORS.emerald.primary }}>{stats.kuponScan}</div>
+              <div style={{ fontSize: 11, color: COLORS.gray[400] }}>Sudah Diambil</div>
             </div>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 24, fontWeight: 900, color: C.gold }}>{mustahiq.length - kuponDiambil}</div>
-              <div style={{ fontSize: 11, color: C.g400 }}>Belum Diambil</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: COLORS.gold.primary }}>{stats.kuponBelum}</div>
+              <div style={{ fontSize: 11, color: COLORS.gray[400] }}>Belum Diambil</div>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
 
-      {/* Keuangan Banner */}
-      <Card style={{ padding: "22px 26px", background: `linear-gradient(135deg, ${C.emD}, #0a5c3e)`, border: "none", marginBottom: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 16, alignItems: "center" }}>
+      <div style={{ background: `linear-gradient(135deg, ${COLORS.emerald.dark}, #0a6e50)`, borderRadius: 16, padding: "24px 28px", marginBottom: 24, color: "#fff" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "#fff" }}>💰 Ringkasan Keuangan</h3>
-            <p style={{ margin: "4px 0 0", opacity: 0.6, fontSize: 12 }}>Transparansi dana qurban</p>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>💰 Ringkasan Keuangan</h3>
+            <p style={{ margin: "4px 0 0", opacity: 0.7, fontSize: 13 }}>Per hari ini, 9 Juni 2025</p>
           </div>
-          <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
-            {[["Pemasukan", totalPemasukan, C.goldM], ["Pengeluaran", totalPengeluaran, "#fca5a5"], ["Saldo", totalPemasukan - totalPengeluaran, "#fff"]].map(([l, v, col]) => (
-              <div key={l}>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{l}</div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: col }}>{fRp(v)}</div>
-              </div>
-            ))}
+          <div style={{ display: "flex", gap: 32 }}>
+            <div>
+              <div style={{ fontSize: 11, opacity: 0.7 }}>Saldo Akhir</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: COLORS.gold.mid }}>{formatRupiah(stats.totalPemasukan - stats.totalPengeluaran)}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, opacity: 0.7 }}>Pemasukan</div>
+              <div style={{ fontSize: 18, fontWeight: 700 }}>{formatRupiah(stats.totalPemasukan)}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, opacity: 0.7 }}>Pengeluaran</div>
+              <div style={{ fontSize: 18, fontWeight: 700 }}>{formatRupiah(stats.totalPengeluaran)}</div>
+            </div>
           </div>
         </div>
-      </Card>
-
-      {/* Quick Actions */}
-      <Card style={{ padding: "20px" }}>
-        <h3 style={{ margin: "0 0 14px", fontSize: 15, fontWeight: 800, color: C.g700 }}>Aksi Cepat</h3>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          {[
-            { label: "Tambah Hewan", page: "hewan", icon: "🐄" },
-            { label: "Tambah Mudhohi", page: "mudhohi", icon: "👥" },
-            { label: "Scan Kupon", page: "scan", icon: "🔍" },
-            { label: "Catat Transaksi", page: "keuangan", icon: "💰" },
-          ].map(a => (
-            <button key={a.label} onClick={() => setPage(a.page)}
-              style={{ background: C.g50, border: `1px solid ${C.g200}`, borderRadius: 10, padding: "10px 16px", cursor: "pointer", fontSize: 14, fontWeight: 600, color: C.g700, display: "flex", alignItems: "center", gap: 8, fontFamily: "inherit", transition: "background 0.15s" }}
-              onMouseEnter={e => e.currentTarget.style.background = C.emL}
-              onMouseLeave={e => e.currentTarget.style.background = C.g50}>
-              {a.icon} {a.label}
-            </button>
-          ))}
-        </div>
-      </Card>
-    </div>
-  );
-}
-
-// ============================================================
-// TABLE WRAPPER
-// ============================================================
-function Table({ cols, rows, empty }) {
-  if (rows.length === 0) return empty;
-  return (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}>
-        <thead>
-          <tr style={{ background: C.g50 }}>
-            {cols.map(c => <th key={c} style={{ padding: "11px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.g500, textTransform: "uppercase", letterSpacing: 0.4, whiteSpace: "nowrap" }}>{c}</th>)}
-          </tr>
-        </thead>
-        <tbody>{rows}</tbody>
-      </table>
-    </div>
-  );
-}
-
-function TR({ children, even }) {
-  return <tr style={{ borderTop: `1px solid ${C.g100}`, background: even ? C.g50 : "#fff" }}>{children}</tr>;
-}
-function TD({ children, bold, small, mono }) {
-  return <td style={{ padding: "11px 14px", fontSize: small ? 12 : 14, fontWeight: bold ? 700 : 400, color: bold ? C.g800 : C.g600, whiteSpace: "nowrap", fontFamily: mono ? "monospace" : "inherit" }}>{children}</td>;
-}
-
-// ============================================================
-// PAGE HEADER
-// ============================================================
-function PageHeader({ title, sub, children }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 22, flexWrap: "wrap", gap: 12 }}>
-      <div>
-        <h1 style={{ fontSize: 22, fontWeight: 900, color: C.g900, margin: 0 }}>{title}</h1>
-        {sub && <p style={{ fontSize: 13, color: C.g400, margin: "4px 0 0" }}>{sub}</p>}
-      </div>
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>{children}</div>
-    </div>
-  );
-}
-
-function SearchBar({ value, onChange, placeholder = "Cari..." }) {
-  return (
-    <div style={{ position: "relative" }}>
-      <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: C.g400, fontSize: 14 }}>🔎</span>
-      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        style={{ padding: "8px 14px 8px 34px", borderRadius: 10, border: `1px solid ${C.g200}`, fontSize: 14, width: 200, fontFamily: "inherit", outline: "none" }} />
-    </div>
-  );
-}
-
-// ============================================================
-// HEWAN PAGE
-// ============================================================
-const HEWAN_STATUSES = ["Terdaftar", "Siap Disembelih", "Disembelih", "Dikuliti", "Dipotong", "Dikemas", "Selesai"];
-
-function HewanForm({ initial, onSave, onClose }) {
-  const [form, setForm] = useState(initial || { kode: "", jenis: "Sapi", berat: "", harga: "", lokasi: "", status: "Terdaftar", kelompok: "", catatan: "" });
-  const f = (k) => (v) => setForm(p => ({ ...p, [k]: v }));
-  function submit() {
-    if (!form.kode || !form.jenis || !form.berat || !form.harga) return alert("Lengkapi field wajib!");
-    onSave({ ...form, berat: Number(form.berat), harga: Number(form.harga) });
-    onClose();
-  }
-  return (
-    <>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
-        <Inp label="Kode Hewan" value={form.kode} onChange={f("kode")} placeholder="SAP-001" required />
-        <Inp label="Jenis" value={form.jenis} onChange={f("jenis")} options={["Sapi", "Kambing"]} required />
-        <Inp label="Berat (kg)" value={form.berat} onChange={f("berat")} type="number" min="1" required />
-        <Inp label="Harga (Rp)" value={form.harga} onChange={f("harga")} type="number" min="0" step="1000" required />
-        <Inp label="Lokasi Kandang" value={form.lokasi} onChange={f("lokasi")} placeholder="Kandang A" />
-        <Inp label="Kelompok" value={form.kelompok} onChange={f("kelompok")} placeholder="KEL-001" />
-        <div style={{ gridColumn: "1/-1" }}>
-          <Inp label="Status" value={form.status} onChange={f("status")} options={HEWAN_STATUSES} />
-        </div>
-        <div style={{ gridColumn: "1/-1" }}>
-          <Inp label="Catatan" value={form.catatan} onChange={f("catatan")} textarea placeholder="Catatan tambahan..." />
+        <div style={{ marginTop: 16 }}>
+          <ProgressBar value={stats.kuponScan} max={stats.totalKupon} color={COLORS.gold.mid} />
         </div>
       </div>
-      <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
-        <Btn onClick={onClose} outline color={C.g400}>Batal</Btn>
-        <Btn onClick={submit} color={C.em}>💾 Simpan</Btn>
-      </div>
-    </>
-  );
-}
 
-function HewanPage({ hewan, setHewan, toast }) {
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("Semua");
-  const [modal, setModal] = useState(null);
-  const [confirm, setConfirm] = useState(null);
-
-  const filtered = hewan.filter(h => {
-    const q = search.toLowerCase();
-    return (filter === "Semua" || h.status === filter) &&
-      (h.kode.toLowerCase().includes(q) || h.jenis.toLowerCase().includes(q) || h.kelompok.toLowerCase().includes(q));
-  });
-
-  function add(data) { setHewan(p => [...p, { ...data, id: uid() }]); toast("Hewan berhasil ditambahkan!", "success"); }
-  function edit(data) { setHewan(p => p.map(h => h.id === modal.id ? { ...h, ...data } : h)); toast("Data hewan diperbarui!", "success"); }
-  function del(id) { setHewan(p => p.filter(h => h.id !== id)); toast("Hewan dihapus.", "success"); }
-
-  return (
-    <div>
-      <PageHeader title="Hewan Qurban" sub={`${hewan.length} hewan terdaftar`}>
-        <SearchBar value={search} onChange={setSearch} placeholder="Cari kode / jenis..." />
-        <select value={filter} onChange={e => setFilter(e.target.value)} style={{ padding: "8px 12px", borderRadius: 10, border: `1px solid ${C.g200}`, fontSize: 13, fontFamily: "inherit" }}>
-          <option value="Semua">Semua Status</option>
-          {HEWAN_STATUSES.map(s => <option key={s}>{s}</option>)}
-        </select>
-        <Btn onClick={() => setModal({ mode: "add" })} color={C.em}>+ Tambah Hewan</Btn>
-      </PageHeader>
-
-      <Card>
-        <Table cols={["Kode", "Jenis", "Berat", "Harga", "Lokasi", "Kelompok", "Status", "Aksi"]}
-          empty={<EmptyState icon="🐄" title="Belum ada hewan" desc="Tambah data hewan qurban pertama" action={<Btn onClick={() => setModal({ mode: "add" })} color={C.em}>+ Tambah Hewan</Btn>} />}
-          rows={filtered.map((h, i) => (
-            <TR key={h.id} even={i % 2 === 0}>
-              <TD bold><span style={{ color: C.emD }}>{h.kode}</span></TD>
-              <TD>{h.jenis === "Sapi" ? "🐄" : "🐑"} {h.jenis}</TD>
-              <TD>{h.berat} kg</TD>
-              <TD>{fRp(h.harga)}</TD>
-              <TD small>{h.lokasi || "-"}</TD>
-              <TD small mono>{h.kelompok || "-"}</TD>
-              <TD><Badge s={h.status} /></TD>
-              <TD>
-                <div style={{ display: "flex", gap: 6 }}>
-                  <Btn small color={C.sky} onClick={() => setModal({ mode: "edit", ...h })}>✏ Edit</Btn>
-                  <Btn small color={C.red} onClick={() => setConfirm(h.id)}>🗑</Btn>
-                </div>
-              </TD>
-            </TR>
-          ))}
-        />
-      </Card>
-
-      {modal && (
-        <Modal title={modal.mode === "add" ? "Tambah Hewan Qurban" : "Edit Hewan Qurban"} onClose={() => setModal(null)} wide>
-          <HewanForm initial={modal.mode === "edit" ? modal : null} onSave={modal.mode === "add" ? add : edit} onClose={() => setModal(null)} />
-        </Modal>
-      )}
-      {confirm && <ConfirmModal msg="Yakin hapus data hewan ini?" onConfirm={() => del(confirm)} onClose={() => setConfirm(null)} />}
-    </div>
-  );
-}
-
-// ============================================================
-// MUDHOHI PAGE
-// ============================================================
-function MudhohiForm({ initial, onSave, onClose }) {
-  const [form, setForm] = useState(initial || { nama: "", wa: "", alamat: "", jenis: "Sapi", namaAtas: "", kelompok: "", pembayaran: "Belum Dibayar", nominal: "" });
-  const f = k => v => setForm(p => ({ ...p, [k]: v }));
-  function submit() {
-    if (!form.nama || !form.wa) return alert("Nama dan No WA wajib diisi!");
-    onSave({ ...form, nominal: Number(form.nominal) });
-    onClose();
-  }
-  return (
-    <>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
-        <Inp label="Nama Lengkap" value={form.nama} onChange={f("nama")} placeholder="H. Ahmad Fauzi" required />
-        <Inp label="No WhatsApp" value={form.wa} onChange={f("wa")} placeholder="08123456789" type="tel" required />
-        <div style={{ gridColumn: "1/-1" }}>
-          <Inp label="Alamat" value={form.alamat} onChange={f("alamat")} placeholder="Jl. Mawar No. 12" />
-        </div>
-        <Inp label="Jenis Qurban" value={form.jenis} onChange={f("jenis")} options={["Sapi", "Kambing"]} />
-        <Inp label="Nama Atas Qurban" value={form.namaAtas} onChange={f("namaAtas")} placeholder="Nama yang atas namakan" />
-        <Inp label="Kelompok / ID" value={form.kelompok} onChange={f("kelompok")} placeholder="KEL-001" />
-        <Inp label="Status Pembayaran" value={form.pembayaran} onChange={f("pembayaran")} options={["Lunas", "DP", "Belum Dibayar"]} />
-        <Inp label="Nominal Dibayar (Rp)" value={form.nominal} onChange={f("nominal")} type="number" min="0" step="1000" />
-      </div>
-      <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
-        <Btn onClick={onClose} outline color={C.g400}>Batal</Btn>
-        <Btn onClick={submit} color={C.em}>💾 Simpan</Btn>
-      </div>
-    </>
-  );
-}
-
-function MudhohiPage({ mudhohi, setMudhohi, toast }) {
-  const [search, setSearch] = useState("");
-  const [modal, setModal] = useState(null);
-  const [confirm, setConfirm] = useState(null);
-
-  const filtered = mudhohi.filter(m => {
-    const q = search.toLowerCase();
-    return m.nama.toLowerCase().includes(q) || m.wa.includes(q) || m.kelompok.toLowerCase().includes(q);
-  });
-
-  function add(data) { setMudhohi(p => [...p, { ...data, id: "M" + uid() }]); toast("Mudhohi berhasil ditambahkan!", "success"); }
-  function edit(data) { setMudhohi(p => p.map(m => m.id === modal.id ? { ...m, ...data } : m)); toast("Data mudhohi diperbarui!", "success"); }
-  function del(id) { setMudhohi(p => p.filter(m => m.id !== id)); toast("Data dihapus.", "success"); }
-
-  function kirimWA(m) {
-    const msg = encodeURIComponent(`Assalamu'alaikum Bpk/Ibu *${m.nama}*,\n\nPendaftaran qurban Anda telah *terkonfirmasi* ✅\n\n• Jenis: ${m.jenis}\n• Nama Atas: ${m.namaAtas}\n• Kelompok: ${m.kelompok}\n• Status Bayar: ${m.pembayaran}\n\nBarakallahu fiikum 🌙\n_Panitia Qurban Masjid Al-Ikhlas_`);
-    window.open(`https://wa.me/${m.wa.replace(/\D/g, "")}?text=${msg}`, "_blank");
-  }
-
-  return (
-    <div>
-      <PageHeader title="Data Mudhohi" sub={`${mudhohi.length} peserta qurban terdaftar`}>
-        <SearchBar value={search} onChange={setSearch} placeholder="Cari nama / WA..." />
-        <Btn onClick={() => setModal({ mode: "add" })} color={C.em}>+ Tambah Mudhohi</Btn>
-      </PageHeader>
-
-      <Card>
-        <Table cols={["Nama", "No WA", "Jenis Qurban", "Nama Atas", "Kelompok", "Pembayaran", "Nominal", "Aksi"]}
-          empty={<EmptyState icon="👥" title="Belum ada mudhohi" desc="Tambah data peserta qurban" action={<Btn onClick={() => setModal({ mode: "add" })} color={C.em}>+ Tambah Mudhohi</Btn>} />}
-          rows={filtered.map((m, i) => (
-            <TR key={m.id} even={i % 2 === 0}>
-              <TD bold>{m.nama}</TD>
-              <TD><a href="#" onClick={e => { e.preventDefault(); kirimWA(m); }} style={{ color: "#16a34a", fontWeight: 600, textDecoration: "none", fontSize: 13 }}>📱 {m.wa}</a></TD>
-              <TD>{m.jenis === "Sapi" ? "🐄" : "🐑"} {m.jenis}</TD>
-              <TD small>{m.namaAtas || "-"}</TD>
-              <TD small mono>{m.kelompok || "-"}</TD>
-              <TD><Badge s={m.pembayaran} /></TD>
-              <TD small>{m.nominal ? fRp(m.nominal) : "-"}</TD>
-              <TD>
-                <div style={{ display: "flex", gap: 6 }}>
-                  <Btn small color={C.sky} onClick={() => setModal({ mode: "edit", ...m })}>✏ Edit</Btn>
-                  <Btn small color={C.red} onClick={() => setConfirm(m.id)}>🗑</Btn>
-                </div>
-              </TD>
-            </TR>
-          ))}
-        />
-      </Card>
-
-      {modal && (
-        <Modal title={modal.mode === "add" ? "Tambah Mudhohi" : "Edit Mudhohi"} onClose={() => setModal(null)} wide>
-          <MudhohiForm initial={modal.mode === "edit" ? modal : null} onSave={modal.mode === "add" ? add : edit} onClose={() => setModal(null)} />
-        </Modal>
-      )}
-      {confirm && <ConfirmModal msg="Yakin hapus data mudhohi ini?" onConfirm={() => del(confirm)} onClose={() => setConfirm(null)} />}
-    </div>
-  );
-}
-
-// ============================================================
-// MUSTAHIQ PAGE
-// ============================================================
-const KATEGORI_MUSTAHIQ = ["Fakir Miskin", "Warga Sekitar", "Panitia", "Mudhohi", "Tokoh Masyarakat", "Lainnya"];
-
-function MustahiqForm({ initial, sesi, onSave, onClose }) {
-  const nextKupon = "KPN-" + String(Math.floor(Math.random() * 9000) + 1000).padStart(4, "0");
-  const [form, setForm] = useState(initial || { nama: "", kategori: "Warga Sekitar", rt: "", rw: "", kupon: nextKupon, status: "Belum Diambil", sesi: "" });
-  const f = k => v => setForm(p => ({ ...p, [k]: v }));
-  function submit() {
-    if (!form.nama || !form.kupon) return alert("Nama dan nomor kupon wajib!");
-    onSave(form); onClose();
-  }
-  return (
-    <>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
-        <Inp label="Nama Lengkap" value={form.nama} onChange={f("nama")} required />
-        <Inp label="Kategori" value={form.kategori} onChange={f("kategori")} options={KATEGORI_MUSTAHIQ} />
-        <Inp label="RT" value={form.rt} onChange={f("rt")} placeholder="001" />
-        <Inp label="RW" value={form.rw} onChange={f("rw")} placeholder="003" />
-        <Inp label="No. Kupon" value={form.kupon} onChange={f("kupon")} placeholder="KPN-0001" required />
-        <Inp label="Status Kupon" value={form.status} onChange={f("status")} options={["Belum Diambil", "Sudah Diambil", "Batal"]} />
-        <div style={{ gridColumn: "1/-1" }}>
-          <Inp label="Sesi Distribusi" value={form.sesi} onChange={f("sesi")} options={["", ...sesi.map(s => s.id + " - " + s.nama)]} />
-        </div>
-      </div>
-      <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
-        <Btn onClick={onClose} outline color={C.g400}>Batal</Btn>
-        <Btn onClick={submit} color={C.em}>💾 Simpan</Btn>
-      </div>
-    </>
-  );
-}
-
-function MustahiqPage({ mustahiq, setMustahiq, sesi, toast }) {
-  const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("Semua");
-  const [modal, setModal] = useState(null);
-  const [confirm, setConfirm] = useState(null);
-
-  const filtered = mustahiq.filter(m => {
-    const q = search.toLowerCase();
-    return (filterStatus === "Semua" || m.status === filterStatus) &&
-      (m.nama.toLowerCase().includes(q) || m.kupon.toLowerCase().includes(q) || m.kategori.toLowerCase().includes(q));
-  });
-
-  function add(data) { setMustahiq(p => [...p, { ...data, id: "W" + uid() }]); toast("Mustahiq ditambahkan!", "success"); }
-  function edit(data) { setMustahiq(p => p.map(m => m.id === modal.id ? { ...m, ...data } : m)); toast("Data diperbarui!", "success"); }
-  function del(id) { setMustahiq(p => p.filter(m => m.id !== id)); toast("Data dihapus.", "success"); }
-  function tandai(id) { setMustahiq(p => p.map(m => m.id === id ? { ...m, status: "Sudah Diambil" } : m)); toast("Kupon ditandai sudah diambil! ✓", "success"); }
-
-  function genBulk() {
-    const news = Array.from({ length: 10 }, (_, i) => ({
-      id: "W" + uid(), nama: `Warga RT 005 #${i + 1}`, kategori: "Warga Sekitar",
-      rt: "005", rw: "003", kupon: "KPN-" + String(mustahiq.length + i + 1).padStart(4, "0"),
-      status: "Belum Diambil", sesi: sesi[0]?.id || ""
-    }));
-    setMustahiq(p => [...p, ...news]);
-    toast("10 kupon warga RT 005 berhasil digenerate!", "success");
-  }
-
-  return (
-    <div>
-      <PageHeader title="Data Mustahiq" sub={`${mustahiq.length} penerima daging`}>
-        <SearchBar value={search} onChange={setSearch} placeholder="Cari nama / kupon..." />
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ padding: "8px 12px", borderRadius: 10, border: `1px solid ${C.g200}`, fontSize: 13, fontFamily: "inherit" }}>
-          {["Semua", "Belum Diambil", "Sudah Diambil", "Batal"].map(s => <option key={s}>{s}</option>)}
-        </select>
-        <Btn onClick={genBulk} color={C.gold}>🎫 Generate Kupon RT</Btn>
-        <Btn onClick={() => setModal({ mode: "add" })} color={C.em}>+ Tambah</Btn>
-      </PageHeader>
-
-      <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
-        {[["Semua", mustahiq.length, C.g500], ["Belum Diambil", mustahiq.filter(m => m.status === "Belum Diambil").length, C.gold], ["Sudah Diambil", mustahiq.filter(m => m.status === "Sudah Diambil").length, C.em], ["Batal", mustahiq.filter(m => m.status === "Batal").length, C.red]].map(([l, n, col]) => (
-          <button key={l} onClick={() => setFilterStatus(l)}
-            style={{ background: filterStatus === l ? col + "18" : C.g50, border: `1px solid ${filterStatus === l ? col : C.g200}`, borderRadius: 10, padding: "8px 16px", cursor: "pointer", fontSize: 13, fontWeight: filterStatus === l ? 700 : 500, color: filterStatus === l ? col : C.g600, fontFamily: "inherit" }}>
-            {l} <span style={{ fontWeight: 800 }}>({n})</span>
-          </button>
+      <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", padding: "20px 24px" }}>
+        <h3 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 700, color: COLORS.gray[700] }}>Aktivitas Terbaru</h3>
+        {[
+          { icon: "🐄", text: "Sapi SAP-002 berhasil disembelih", time: "10 menit lalu", color: "#fee2e2" },
+          { icon: "🎫", text: "50 kupon baru diterbitkan untuk RT 003/004", time: "25 menit lalu", color: "#dbeafe" },
+          { icon: "💰", text: "Pembayaran qurban dari H. Ahmad Fauzi", time: "1 jam lalu", color: "#d1fae5" },
+          { icon: "📱", text: "Notifikasi WA dikirim ke 7 mudhohi sapi KEL-001", time: "2 jam lalu", color: "#fef3c7" },
+        ].map((a, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: i < 3 ? "1px solid #f3f4f6" : "none" }}>
+            <div style={{ width: 36, height: 36, background: a.color, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{a.icon}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, color: COLORS.gray[700] }}>{a.text}</div>
+              <div style={{ fontSize: 12, color: COLORS.gray[400] }}>{a.time}</div>
+            </div>
+          </div>
         ))}
       </div>
-
-      <Card>
-        <Table cols={["Nama", "Kategori", "RT/RW", "No. Kupon", "Sesi", "Status", "Aksi"]}
-          empty={<EmptyState icon="🤲" title="Belum ada mustahiq" desc="Tambah penerima daging qurban" action={<Btn onClick={() => setModal({ mode: "add" })} color={C.em}>+ Tambah</Btn>} />}
-          rows={filtered.map((m, i) => (
-            <TR key={m.id} even={i % 2 === 0}>
-              <TD bold>{m.nama}</TD>
-              <TD small>{m.kategori}</TD>
-              <TD small mono>RT {m.rt}/RW {m.rw}</TD>
-              <TD small mono><span style={{ color: C.sky, fontWeight: 700 }}>{m.kupon}</span></TD>
-              <TD small>{sesi.find(s => s.id === m.sesi)?.nama || m.sesi || "-"}</TD>
-              <TD><Badge s={m.status} /></TD>
-              <TD>
-                <div style={{ display: "flex", gap: 5 }}>
-                  {m.status === "Belum Diambil" && <Btn small color={C.em} onClick={() => tandai(m.id)}>✓ Diambil</Btn>}
-                  <Btn small color={C.sky} onClick={() => setModal({ mode: "edit", ...m })}>✏</Btn>
-                  <Btn small color={C.red} onClick={() => setConfirm(m.id)}>🗑</Btn>
-                </div>
-              </TD>
-            </TR>
-          ))}
-        />
-      </Card>
-
-      {modal && (
-        <Modal title={modal.mode === "add" ? "Tambah Mustahiq" : "Edit Mustahiq"} onClose={() => setModal(null)} wide>
-          <MustahiqForm initial={modal.mode === "edit" ? modal : null} sesi={sesi} onSave={modal.mode === "add" ? add : edit} onClose={() => setModal(null)} />
-        </Modal>
-      )}
-      {confirm && <ConfirmModal msg="Yakin hapus data mustahiq ini?" onConfirm={() => del(confirm)} onClose={() => setConfirm(null)} />}
     </div>
   );
 }
 
-// ============================================================
-// SESI PAGE
-// ============================================================
-function SesiForm({ initial, onSave, onClose }) {
-  const [form, setForm] = useState(initial || { nama: "", tanggal: "2025-06-09", jamMulai: "07:00", jamSelesai: "09:00", lokasi: "", kuota: 50 });
-  const f = k => v => setForm(p => ({ ...p, [k]: v }));
-  function submit() {
-    if (!form.nama || !form.tanggal) return alert("Nama dan tanggal wajib!");
-    onSave({ ...form, kuota: Number(form.kuota) }); onClose();
+function HewanPage({ toast }) {
+  const [hewan, setHewan] = useState(dummyHewan);
+  const [search, setSearch] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const [newStatus, setNewStatus] = useState("");
+  const statuses = ["Terdaftar", "Siap Disembelih", "Disembelih", "Dikuliti", "Dipotong", "Dikemas", "Selesai"];
+
+  const filtered = hewan.filter(h => h.kode.toLowerCase().includes(search.toLowerCase()) || h.jenis.toLowerCase().includes(search.toLowerCase()));
+
+  function updateStatus(id, status) {
+    setHewan(hewan.map(h => h.id === id ? { ...h, status } : h));
+    toast("Status hewan diperbarui. Notifikasi WA akan dikirim ke mudhohi.", "success");
+    setShowModal(false);
   }
-  return (
-    <>
-      <Inp label="Nama Sesi" value={form.nama} onChange={f("nama")} placeholder="Sesi Pagi A" required />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
-        <Inp label="Tanggal" value={form.tanggal} onChange={f("tanggal")} type="date" required />
-        <Inp label="Kuota Maksimal" value={form.kuota} onChange={f("kuota")} type="number" min="1" />
-        <Inp label="Jam Mulai" value={form.jamMulai} onChange={f("jamMulai")} type="time" />
-        <Inp label="Jam Selesai" value={form.jamSelesai} onChange={f("jamSelesai")} type="time" />
-      </div>
-      <Inp label="Lokasi" value={form.lokasi} onChange={f("lokasi")} placeholder="Halaman Masjid" />
-      <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-        <Btn onClick={onClose} outline color={C.g400}>Batal</Btn>
-        <Btn onClick={submit} color={C.em}>💾 Simpan</Btn>
-      </div>
-    </>
-  );
-}
-
-function SesiPage({ sesi, setSesi, mustahiq, toast }) {
-  const [modal, setModal] = useState(null);
-  const [confirm, setConfirm] = useState(null);
-
-  function add(data) { setSesi(p => [...p, { ...data, id: "S" + uid() }]); toast("Sesi ditambahkan!", "success"); }
-  function edit(data) { setSesi(p => p.map(s => s.id === modal.id ? { ...s, ...data } : s)); toast("Sesi diperbarui!", "success"); }
-  function del(id) { setSesi(p => p.filter(s => s.id !== id)); toast("Sesi dihapus.", "success"); }
 
   return (
     <div>
-      <PageHeader title="Sesi Distribusi" sub="Jadwal pembagian daging qurban">
-        <Btn onClick={() => setModal({ mode: "add" })} color={C.em}>+ Buat Sesi</Btn>
-      </PageHeader>
-
-      {sesi.length === 0 ? (
-        <EmptyState icon="📅" title="Belum ada sesi" desc="Buat jadwal sesi distribusi daging" action={<Btn onClick={() => setModal({ mode: "add" })} color={C.em}>+ Buat Sesi</Btn>} />
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-          {sesi.map(s => {
-            const terisi = mustahiq.filter(m => m.sesi === s.id).length;
-            const pct = Math.round(terisi / s.kuota * 100);
-            const penuh = terisi >= s.kuota;
-            return (
-              <Card key={s.id} style={{ padding: "20px", border: penuh ? `2px solid ${C.red}` : `1px solid ${C.g200}` }}>
-                {penuh && <div style={{ background: C.redL, color: "#991b1b", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, display: "inline-block", marginBottom: 10 }}>⚠ PENUH</div>}
-                <h3 style={{ margin: "0 0 6px", fontSize: 16, fontWeight: 800, color: C.g800 }}>{s.nama}</h3>
-                <p style={{ margin: "0 0 4px", fontSize: 13, color: C.g400 }}>📅 {fDate(s.tanggal)}</p>
-                <p style={{ margin: "0 0 4px", fontSize: 13, color: C.g400 }}>⏰ {s.jamMulai} – {s.jamSelesai}</p>
-                <p style={{ margin: "0 0 14px", fontSize: 13, color: C.g400 }}>📍 {s.lokasi || "-"}</p>
-                <div style={{ marginBottom: 14 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ fontSize: 12, color: C.g500 }}>Terisi</span>
-                    <span style={{ fontSize: 12, fontWeight: 800, color: penuh ? C.red : C.em }}>{terisi}/{s.kuota}</span>
-                  </div>
-                  <div style={{ height: 8, background: C.g100, borderRadius: 99 }}>
-                    <div style={{ width: Math.min(pct, 100) + "%", height: "100%", background: penuh ? C.red : C.em, borderRadius: 99, transition: "width 0.6s ease" }} />
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <Btn small color={C.sky} onClick={() => setModal({ mode: "edit", ...s })}>✏ Edit</Btn>
-                  <Btn small color={C.red} onClick={() => setConfirm(s.id)}>🗑 Hapus</Btn>
-                </div>
-              </Card>
-            );
-          })}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: COLORS.gray[800], margin: 0 }}>Hewan Qurban</h1>
+          <p style={{ fontSize: 13, color: COLORS.gray[400], margin: "4px 0 0" }}>{hewan.length} hewan terdaftar</p>
         </div>
-      )}
-
-      {modal && (
-        <Modal title={modal.mode === "add" ? "Buat Sesi Baru" : "Edit Sesi"} onClose={() => setModal(null)}>
-          <SesiForm initial={modal.mode === "edit" ? modal : null} onSave={modal.mode === "add" ? add : edit} onClose={() => setModal(null)} />
+        <div style={{ display: "flex", gap: 10 }}>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari hewan..." style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid #e5e7eb", fontSize: 14, width: 200 }} />
+          <button onClick={() => toast("Fitur tambah hewan tersedia di versi lengkap.", "info")}
+            style={{ background: COLORS.emerald.primary, color: "#fff", border: "none", borderRadius: 10, padding: "8px 18px", cursor: "pointer", fontSize: 14, fontWeight: 600 }}>
+            + Tambah Hewan
+          </button>
+        </div>
+      </div>
+      <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ background: COLORS.gray[50] }}>
+              {["Kode", "Jenis", "Berat", "Harga", "Lokasi", "Status", "Aksi"].map(h => (
+                <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 12, fontWeight: 700, color: COLORS.gray[500], textTransform: "uppercase", letterSpacing: 0.5 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((h, i) => (
+              <tr key={h.id} style={{ borderTop: "1px solid #f3f4f6", background: i % 2 === 0 ? "#fff" : "#fafafa" }}>
+                <td style={{ padding: "12px 16px", fontSize: 14, fontWeight: 600, color: COLORS.emerald.dark }}>{h.kode}</td>
+                <td style={{ padding: "12px 16px", fontSize: 14 }}>{h.jenis === "Sapi" ? "🐄" : "🐑"} {h.jenis}</td>
+                <td style={{ padding: "12px 16px", fontSize: 14 }}>{h.berat} kg</td>
+                <td style={{ padding: "12px 16px", fontSize: 14 }}>{formatRupiah(h.harga)}</td>
+                <td style={{ padding: "12px 16px", fontSize: 13, color: COLORS.gray[500] }}>{h.lokasi}</td>
+                <td style={{ padding: "12px 16px" }}><Badge status={h.status} /></td>
+                <td style={{ padding: "12px 16px" }}>
+                  <button onClick={() => { setSelected(h); setNewStatus(h.status); setShowModal(true); }}
+                    style={{ background: COLORS.gold.light, color: COLORS.gold.dark, border: "none", borderRadius: 8, padding: "5px 12px", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+                    Update Status
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {showModal && selected && (
+        <Modal title={`Update Status — ${selected.kode}`} onClose={() => setShowModal(false)}>
+          <p style={{ fontSize: 14, color: COLORS.gray[600], margin: "0 0 16px" }}>Pilih status baru untuk hewan ini. Sistem akan mengirim notifikasi ke mudhohi terkait.</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {statuses.map(s => (
+              <button key={s} onClick={() => setNewStatus(s)}
+                style={{ textAlign: "left", padding: "10px 16px", borderRadius: 10, border: `2px solid ${newStatus === s ? COLORS.emerald.primary : "#e5e7eb"}`, background: newStatus === s ? COLORS.emerald.light : "#fff", cursor: "pointer", fontSize: 14, fontWeight: newStatus === s ? 600 : 400, color: newStatus === s ? COLORS.emerald.dark : COLORS.gray[600] }}>
+                {s}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => updateStatus(selected.id, newStatus)}
+            style={{ marginTop: 20, width: "100%", background: COLORS.emerald.primary, color: "#fff", border: "none", borderRadius: 12, padding: "12px", cursor: "pointer", fontSize: 15, fontWeight: 700 }}>
+            💾 Simpan & Kirim Notif WA
+          </button>
         </Modal>
       )}
-      {confirm && <ConfirmModal msg="Yakin hapus sesi ini?" onConfirm={() => del(confirm)} onClose={() => setConfirm(null)} />}
     </div>
   );
 }
 
-// ============================================================
-// SCAN PAGE
-// ============================================================
-function ScanPage({ mustahiq, setMustahiq, toast }) {
+function MudhohibPage({ toast }) {
+  const [search, setSearch] = useState("");
+  const filtered = dummyMudhohi.filter(m => m.nama.toLowerCase().includes(search.toLowerCase()));
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: COLORS.gray[800], margin: 0 }}>Data Mudhohi</h1>
+          <p style={{ fontSize: 13, color: COLORS.gray[400], margin: "4px 0 0" }}>Peserta program qurban</p>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari nama..." style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid #e5e7eb", fontSize: 14, width: 200 }} />
+          <button onClick={() => toast("Data berhasil diexport ke Excel.", "success")}
+            style={{ background: "#f3f4f6", color: COLORS.gray[700], border: "1px solid #e5e7eb", borderRadius: 10, padding: "8px 16px", cursor: "pointer", fontSize: 14 }}>
+            📤 Export Excel
+          </button>
+          <button onClick={() => toast("Fitur tambah mudhohi tersedia.", "info")}
+            style={{ background: COLORS.emerald.primary, color: "#fff", border: "none", borderRadius: 10, padding: "8px 18px", cursor: "pointer", fontSize: 14, fontWeight: 600 }}>
+            + Tambah
+          </button>
+        </div>
+      </div>
+      <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ background: COLORS.gray[50] }}>
+              {["Nama", "No WA", "Alamat", "Jenis Qurban", "Nama Atas Qurban", "Kelompok", "Pembayaran"].map(h => (
+                <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 12, fontWeight: 700, color: COLORS.gray[500], textTransform: "uppercase", letterSpacing: 0.5, whiteSpace: "nowrap" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((m, i) => (
+              <tr key={m.id} style={{ borderTop: "1px solid #f3f4f6", background: i % 2 === 0 ? "#fff" : "#fafafa" }}>
+                <td style={{ padding: "12px 16px" }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: COLORS.gray[800] }}>{m.nama}</div>
+                  <div style={{ fontSize: 12, color: COLORS.gray[400] }}>{m.id}</div>
+                </td>
+                <td style={{ padding: "12px 16px", fontSize: 13 }}>
+                  <a href={`https://wa.me/${m.wa}`} target="_blank" style={{ color: "#22c55e", textDecoration: "none", fontWeight: 600 }}>📱 {m.wa}</a>
+                </td>
+                <td style={{ padding: "12px 16px", fontSize: 13, color: COLORS.gray[600] }}>{m.alamat}</td>
+                <td style={{ padding: "12px 16px" }}><span style={{ fontSize: 13 }}>{m.jenis === "Sapi" ? "🐄" : "🐑"} {m.jenis}</span></td>
+                <td style={{ padding: "12px 16px", fontSize: 13, color: COLORS.gray[600] }}>{m.namaAtas}</td>
+                <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600, color: COLORS.emerald.dark }}>{m.kelompok}</td>
+                <td style={{ padding: "12px 16px" }}><Badge status={m.pembayaran} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function MustahiqPage({ toast }) {
+  const [mustahiq, setMustahiq] = useState(dummyMustahiq);
+  const [search, setSearch] = useState("");
+  const filtered = mustahiq.filter(m => m.nama.toLowerCase().includes(search.toLowerCase()) || m.kupon.toLowerCase().includes(search.toLowerCase()));
+  function tandaiDiambil(id) {
+    setMustahiq(mustahiq.map(m => m.id === id ? { ...m, status: "Sudah Diambil" } : m));
+    toast("Kupon berhasil ditandai sudah diambil.", "success");
+  }
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: COLORS.gray[800], margin: 0 }}>Data Mustahiq</h1>
+          <p style={{ fontSize: 13, color: COLORS.gray[400], margin: "4px 0 0" }}>Penerima daging qurban</p>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari nama / kupon..." style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid #e5e7eb", fontSize: 14, width: 200 }} />
+          <button onClick={() => toast("50 kupon warga RT 003 berhasil digenerate!", "success")}
+            style={{ background: COLORS.emerald.primary, color: "#fff", border: "none", borderRadius: 10, padding: "8px 16px", cursor: "pointer", fontSize: 14, fontWeight: 600 }}>
+            🎫 Generate Kupon RT
+          </button>
+        </div>
+      </div>
+      <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ background: COLORS.gray[50] }}>
+              {["Nama", "Kategori", "RT/RW", "No. Kupon", "Status", "Aksi"].map(h => (
+                <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 12, fontWeight: 700, color: COLORS.gray[500], textTransform: "uppercase", letterSpacing: 0.5 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((m, i) => (
+              <tr key={m.id} style={{ borderTop: "1px solid #f3f4f6", background: i % 2 === 0 ? "#fff" : "#fafafa" }}>
+                <td style={{ padding: "12px 16px", fontWeight: 600, fontSize: 14, color: COLORS.gray[800] }}>{m.nama}</td>
+                <td style={{ padding: "12px 16px", fontSize: 13, color: COLORS.gray[600] }}>{m.kategori}</td>
+                <td style={{ padding: "12px 16px", fontSize: 13, color: COLORS.gray[500] }}>RT {m.rt}/RW {m.rw}</td>
+                <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600, color: "#0ea5e9" }}>{m.kupon}</td>
+                <td style={{ padding: "12px 16px" }}><Badge status={m.status} /></td>
+                <td style={{ padding: "12px 16px", display: "flex", gap: 8 }}>
+                  {m.status === "Belum Diambil" && (
+                    <button onClick={() => tandaiDiambil(m.id)}
+                      style={{ background: COLORS.emerald.light, color: COLORS.emerald.dark, border: "none", borderRadius: 8, padding: "5px 12px", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+                      ✓ Tandai Diambil
+                    </button>
+                  )}
+                  <button onClick={() => toast(`Kupon ${m.kupon} siap dicetak.`, "info")}
+                    style={{ background: COLORS.gray[100], color: COLORS.gray[600], border: "none", borderRadius: 8, padding: "5px 12px", cursor: "pointer", fontSize: 12 }}>
+                    🖨 Cetak
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function SesiPage({ toast }) {
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: COLORS.gray[800], margin: 0 }}>Sesi Distribusi</h1>
+          <p style={{ fontSize: 13, color: COLORS.gray[400], margin: "4px 0 0" }}>Jadwal pembagian daging qurban</p>
+        </div>
+        <button onClick={() => toast("Sesi baru berhasil ditambahkan.", "success")}
+          style={{ background: COLORS.emerald.primary, color: "#fff", border: "none", borderRadius: 10, padding: "8px 18px", cursor: "pointer", fontSize: 14, fontWeight: 600 }}>
+          + Buat Sesi
+        </button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
+        {dummySesi.map(s => {
+          const pct = Math.round(s.terisi / s.kuota * 100);
+          const penuh = s.terisi >= s.kuota;
+          return (
+            <div key={s.id} style={{ background: "#fff", border: `2px solid ${penuh ? "#fee2e2" : "#e5e7eb"}`, borderRadius: 16, padding: "20px 22px" }}>
+              {penuh && <div style={{ background: "#fee2e2", color: "#991b1b", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, display: "inline-block", marginBottom: 10 }}>⚠ SESI PENUH</div>}
+              <h3 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 700, color: COLORS.gray[800] }}>{s.nama}</h3>
+              <p style={{ margin: "0 0 14px", fontSize: 13, color: COLORS.gray[400] }}>📅 {s.tanggal} · ⏰ {s.jamMulai}–{s.jamSelesai}</p>
+              <div style={{ fontSize: 13, color: COLORS.gray[600], marginBottom: 14 }}>📍 {s.lokasi}</div>
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                  <span style={{ fontSize: 12, color: COLORS.gray[500] }}>Terisi</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: penuh ? "#ef4444" : COLORS.emerald.primary }}>{s.terisi}/{s.kuota}</span>
+                </div>
+                <div style={{ height: 8, background: COLORS.gray[100], borderRadius: 99 }}>
+                  <div style={{ width: pct + "%", height: "100%", background: penuh ? "#ef4444" : COLORS.emerald.primary, borderRadius: 99 }} />
+                </div>
+              </div>
+              <button onClick={() => toast(`Antrean sesi ${s.nama} ditampilkan.`, "info")}
+                style={{ width: "100%", background: COLORS.emerald.light, color: COLORS.emerald.dark, border: "none", borderRadius: 10, padding: "9px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
+                Lihat Antrean →
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ScanPage({ toast }) {
   const [input, setInput] = useState("");
   const [result, setResult] = useState(null);
-  const [err, setErr] = useState("");
-  const [history, setHistory] = useState([]);
-  const inputRef = useRef();
-
-  useEffect(() => { inputRef.current?.focus(); }, []);
-
-  function scan(val) {
-    const q = (val || input).trim().toUpperCase();
-    setErr(""); setResult(null);
-    if (!q) return;
-    const found = mustahiq.find(m => m.kupon === q);
-    if (!found) { setErr(`Kupon "${q}" tidak ditemukan dalam sistem.`); return; }
-    if (found.status === "Batal") { setErr(`Kupon ${q} telah dibatalkan.`); return; }
+  const [error, setError] = useState(null);
+  function scan() {
+    setError(null);
+    setResult(null);
+    const found = dummyMustahiq.find(m => m.kupon === input.trim().toUpperCase());
+    if (!found) { setError("Kupon tidak ditemukan!"); return; }
+    if (found.status === "Sudah Diambil") { setError(`Kupon ${found.kupon} sudah pernah digunakan!`); return; }
     setResult(found);
   }
-
-  function tandai() {
-    if (!result) return;
-    if (result.status === "Sudah Diambil") { setErr("Kupon ini sudah pernah digunakan!"); return; }
-    setMustahiq(p => p.map(m => m.id === result.id ? { ...m, status: "Sudah Diambil" } : m));
-    const updated = { ...result, status: "Sudah Diambil" };
-    setHistory(h => [{ ...updated, waktu: new Date().toLocaleTimeString("id-ID") }, ...h.slice(0, 9)]);
-    toast(`Kupon ${result.kupon} berhasil divalidasi! ✓`, "success");
-    setResult(null); setInput("");
-    inputRef.current?.focus();
-  }
-
-  const freshResult = result ? mustahiq.find(m => m.id === result.id) : null;
-
   return (
-    <div style={{ maxWidth: 560, margin: "0 auto" }}>
-      <PageHeader title="Scan Kupon" sub="Validasi pengambilan daging qurban" />
-
-      <Card style={{ padding: "24px", marginBottom: 16 }}>
-        <div style={{ background: C.g50, border: `2px dashed ${C.g300}`, borderRadius: 14, height: 160, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+    <div style={{ maxWidth: 480, margin: "0 auto" }}>
+      <h1 style={{ fontSize: 22, fontWeight: 800, color: COLORS.gray[800], marginBottom: 8 }}>Scan Kupon</h1>
+      <p style={{ fontSize: 14, color: COLORS.gray[400], marginBottom: 28 }}>Masukkan nomor kupon atau scan QR Code untuk validasi pengambilan.</p>
+      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 16, padding: "24px" }}>
+        <div style={{ background: COLORS.gray[50], border: "2px dashed #d1d5db", borderRadius: 14, height: 180, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
           <span style={{ fontSize: 48 }}>📷</span>
-          <p style={{ fontSize: 13, color: C.g400, margin: "8px 0 0", textAlign: "center" }}>Kamera QR akan aktif di versi PWA<br />Gunakan input manual di bawah</p>
+          <p style={{ fontSize: 13, color: COLORS.gray[400], margin: "8px 0 0" }}>Kamera QR Code (Versi lengkap)</p>
         </div>
-
-        <label style={{ fontSize: 13, fontWeight: 700, color: C.g600, display: "block", marginBottom: 8 }}>Nomor Kupon</label>
         <div style={{ display: "flex", gap: 10 }}>
-          <input ref={inputRef} value={input} onChange={e => { setInput(e.target.value.toUpperCase()); setErr(""); setResult(null); }}
-            onKeyDown={e => e.key === "Enter" && scan()}
-            placeholder="Contoh: KPN-0001"
-            style={{ flex: 1, padding: "12px 16px", borderRadius: 12, border: `2px solid ${C.g200}`, fontSize: 16, fontFamily: "monospace", outline: "none", textTransform: "uppercase" }} />
-          <Btn onClick={() => scan()} color={C.em}>Cek</Btn>
+          <input value={input} onChange={e => setInput(e.target.value)} placeholder="Contoh: KPN-0001" onKeyDown={e => e.key === "Enter" && scan()}
+            style={{ flex: 1, padding: "10px 16px", borderRadius: 10, border: "1px solid #e5e7eb", fontSize: 15 }} />
+          <button onClick={scan}
+            style={{ background: COLORS.emerald.primary, color: "#fff", border: "none", borderRadius: 10, padding: "10px 20px", cursor: "pointer", fontWeight: 700, fontSize: 14 }}>
+            Cek
+          </button>
         </div>
-        <p style={{ fontSize: 12, color: C.g400, margin: "8px 0 0" }}>Tekan Enter atau klik Cek untuk memvalidasi</p>
-      </Card>
-
-      {err && (
-        <div style={{ background: C.redL, border: `1px solid #fca5a5`, borderRadius: 14, padding: "16px 20px", color: "#991b1b", fontWeight: 600, fontSize: 14, marginBottom: 16, display: "flex", gap: 10, alignItems: "center" }}>
-          <span style={{ fontSize: 20 }}>⛔</span> {err}
+      </div>
+      {error && (
+        <div style={{ marginTop: 16, background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: 14, padding: "16px 20px", color: "#991b1b", fontWeight: 600, fontSize: 14 }}>
+          ⚠ {error}
         </div>
       )}
-
-      {freshResult && (
-        <Card style={{ border: `2px solid ${freshResult.status === "Sudah Diambil" ? C.red : C.em}`, padding: "20px" }}>
-          {freshResult.status === "Sudah Diambil" ? (
-            <div style={{ background: C.redL, borderRadius: 10, padding: "12px 16px", marginBottom: 16, color: "#991b1b", fontWeight: 700, fontSize: 14 }}>
-              ⚠ KUPON INI SUDAH PERNAH DIGUNAKAN!
-            </div>
-          ) : (
-            <div style={{ background: C.emL, borderRadius: 10, padding: "12px 16px", marginBottom: 16, color: C.emD, fontWeight: 700, fontSize: 14 }}>
-              ✅ KUPON VALID — SIAP DIVALIDASI
-            </div>
-          )}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {[["Nama", freshResult.nama], ["Kategori", freshResult.kategori], ["No. Kupon", freshResult.kupon], ["RT/RW", `RT ${freshResult.rt}/RW ${freshResult.rw}`]].map(([k, v]) => (
-              <div key={k} style={{ display: "flex", justifyContent: "space-between", paddingBottom: 8, borderBottom: `1px solid ${C.g100}` }}>
-                <span style={{ fontSize: 13, color: C.g400 }}>{k}</span>
-                <span style={{ fontSize: 14, fontWeight: 700, color: C.g800 }}>{v}</span>
+      {result && (
+        <div style={{ marginTop: 16, background: COLORS.emerald.light, border: `1px solid ${COLORS.emerald.mid}`, borderRadius: 14, padding: "20px 22px" }}>
+          <div style={{ fontSize: 13, color: COLORS.emerald.dark, fontWeight: 700, marginBottom: 12 }}>✅ KUPON VALID</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {[["Nama", result.nama], ["Kategori", result.kategori], ["No. Kupon", result.kupon], ["Status", result.status]].map(([k, v]) => (
+              <div key={k} style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 13, color: COLORS.gray[500] }}>{k}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.gray[800] }}>{v}</span>
               </div>
             ))}
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ fontSize: 13, color: C.g400 }}>Status</span>
-              <Badge s={freshResult.status} />
-            </div>
           </div>
-          {freshResult.status !== "Sudah Diambil" && (
-            <Btn onClick={tandai} color={C.em} full style={{ marginTop: 16 }}>✓ Tandai Sudah Diambil</Btn>
-          )}
-        </Card>
-      )}
-
-      {history.length > 0 && (
-        <Card style={{ padding: "18px", marginTop: 16 }}>
-          <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 800, color: C.g600 }}>Riwayat Scan Hari Ini</h4>
-          {history.map((h, i) => (
-            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < history.length - 1 ? `1px solid ${C.g100}` : "none" }}>
-              <div>
-                <span style={{ fontSize: 13, fontWeight: 700, color: C.g800 }}>{h.nama}</span>
-                <span style={{ fontSize: 12, color: C.g400, marginLeft: 8 }}>{h.kupon}</span>
-              </div>
-              <span style={{ fontSize: 12, color: C.g400 }}>{h.waktu}</span>
-            </div>
-          ))}
-        </Card>
+          <button onClick={() => toast(`Kupon ${result.kupon} ditandai sudah diambil!`, "success")}
+            style={{ marginTop: 16, width: "100%", background: COLORS.emerald.primary, color: "#fff", border: "none", borderRadius: 12, padding: "12px", cursor: "pointer", fontSize: 15, fontWeight: 700 }}>
+            ✓ Tandai Sudah Diambil
+          </button>
+        </div>
       )}
     </div>
   );
 }
 
-// ============================================================
-// KEUANGAN PAGE
-// ============================================================
-function KeuanganForm({ initial, onSave, onClose }) {
-  const [form, setForm] = useState(initial || { tipe: "Pemasukan", kategori: "Iuran Mudhohi", keterangan: "", jumlah: "", tanggal: new Date().toISOString().slice(0, 10) });
-  const f = k => v => setForm(p => ({ ...p, [k]: v }));
-  const katPemasukan = ["Iuran Mudhohi", "Donasi", "Sponsor", "Lainnya"];
-  const katPengeluaran = ["Pembelian Hewan", "Konsumsi", "Perlengkapan", "Operasional", "Dokumentasi", "Lainnya"];
-  const kats = form.tipe === "Pemasukan" ? katPemasukan : katPengeluaran;
-  function submit() {
-    if (!form.keterangan || !form.jumlah) return alert("Keterangan dan jumlah wajib diisi!");
-    onSave({ ...form, jumlah: Number(form.jumlah) }); onClose();
-  }
-  return (
-    <>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
-        <Inp label="Tipe" value={form.tipe} onChange={v => { f("tipe")(v); f("kategori")(v === "Pemasukan" ? katPemasukan[0] : katPengeluaran[0]); }} options={["Pemasukan", "Pengeluaran"]} />
-        <Inp label="Kategori" value={form.kategori} onChange={f("kategori")} options={kats} />
-        <div style={{ gridColumn: "1/-1" }}>
-          <Inp label="Keterangan" value={form.keterangan} onChange={f("keterangan")} placeholder="Deskripsi transaksi" required />
-        </div>
-        <Inp label="Jumlah (Rp)" value={form.jumlah} onChange={f("jumlah")} type="number" min="0" step="1000" required />
-        <Inp label="Tanggal" value={form.tanggal} onChange={f("tanggal")} type="date" />
-      </div>
-      <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-        <Btn onClick={onClose} outline color={C.g400}>Batal</Btn>
-        <Btn onClick={submit} color={C.em}>💾 Simpan</Btn>
-      </div>
-    </>
-  );
-}
-
-function KeuanganPage({ keuangan, setKeuangan, toast }) {
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("Semua");
-  const [modal, setModal] = useState(null);
-  const [confirm, setConfirm] = useState(null);
-
-  const totalPemasukan = keuangan.filter(k => k.tipe === "Pemasukan").reduce((s, k) => s + Number(k.jumlah), 0);
-  const totalPengeluaran = keuangan.filter(k => k.tipe === "Pengeluaran").reduce((s, k) => s + Number(k.jumlah), 0);
-
-  const filtered = keuangan.filter(k => {
-    const q = search.toLowerCase();
-    return (filter === "Semua" || k.tipe === filter) &&
-      (k.keterangan.toLowerCase().includes(q) || k.kategori.toLowerCase().includes(q));
-  }).sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
-
-  function add(data) { setKeuangan(p => [...p, { ...data, id: "K" + uid() }]); toast("Transaksi dicatat!", "success"); }
-  function edit(data) { setKeuangan(p => p.map(k => k.id === modal.id ? { ...k, ...data } : k)); toast("Transaksi diperbarui!", "success"); }
-  function del(id) { setKeuangan(p => p.filter(k => k.id !== id)); toast("Transaksi dihapus.", "success"); }
-
-  function exportCSV() {
-    const rows = [["Tipe", "Kategori", "Keterangan", "Jumlah", "Tanggal"], ...keuangan.map(k => [k.tipe, k.kategori, k.keterangan, k.jumlah, k.tanggal])];
-    const csv = rows.map(r => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "laporan-keuangan-qurban.csv"; a.click();
-    toast("Laporan berhasil diexport ke CSV!", "success");
-  }
-
+function KeuanganPage({ toast }) {
+  const pemasukan = dummyKeuangan.filter(k => k.tipe === "Pemasukan").reduce((s, k) => s + k.jumlah, 0);
+  const pengeluaran = dummyKeuangan.filter(k => k.tipe === "Pengeluaran").reduce((s, k) => s + k.jumlah, 0);
   return (
     <div>
-      <PageHeader title="Laporan RAB & Keuangan" sub="Transparansi dana qurban">
-        <SearchBar value={search} onChange={setSearch} placeholder="Cari keterangan..." />
-        <Btn onClick={exportCSV} color={C.g600} outline>📤 Export CSV</Btn>
-        <Btn onClick={() => setModal({ mode: "add" })} color={C.em}>+ Tambah</Btn>
-      </PageHeader>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 20 }}>
-        <Card style={{ padding: "18px 20px", background: C.emL, border: `1px solid ${C.emM}` }}>
-          <div style={{ fontSize: 11, color: C.emD, fontWeight: 800, marginBottom: 6, textTransform: "uppercase" }}>Total Pemasukan</div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: C.emD }}>{fRp(totalPemasukan)}</div>
-          <div style={{ fontSize: 12, color: C.emM, marginTop: 4 }}>{keuangan.filter(k => k.tipe === "Pemasukan").length} transaksi</div>
-        </Card>
-        <Card style={{ padding: "18px 20px", background: C.redL, border: "1px solid #fca5a5" }}>
-          <div style={{ fontSize: 11, color: "#991b1b", fontWeight: 800, marginBottom: 6, textTransform: "uppercase" }}>Total Pengeluaran</div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: "#991b1b" }}>{fRp(totalPengeluaran)}</div>
-          <div style={{ fontSize: 12, color: "#ef4444", marginTop: 4 }}>{keuangan.filter(k => k.tipe === "Pengeluaran").length} transaksi</div>
-        </Card>
-        <Card style={{ padding: "18px 20px", background: C.goldL, border: `1px solid ${C.goldM}` }}>
-          <div style={{ fontSize: 11, color: C.goldD, fontWeight: 800, marginBottom: 6, textTransform: "uppercase" }}>Saldo Akhir</div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: totalPemasukan >= totalPengeluaran ? C.emD : C.red }}>{fRp(totalPemasukan - totalPengeluaran)}</div>
-          <div style={{ fontSize: 12, color: C.goldM, marginTop: 4 }}>{totalPemasukan >= totalPengeluaran ? "Surplus ✓" : "Defisit ⚠"}</div>
-        </Card>
-      </div>
-
-      <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
-        {["Semua", "Pemasukan", "Pengeluaran"].map(f => (
-          <button key={f} onClick={() => setFilter(f)}
-            style={{ background: filter === f ? (f === "Pemasukan" ? C.emL : f === "Pengeluaran" ? C.redL : C.g200) : C.g50, border: `1px solid ${filter === f ? (f === "Pemasukan" ? C.em : f === "Pengeluaran" ? C.red : C.g300) : C.g200}`, borderRadius: 10, padding: "7px 16px", cursor: "pointer", fontSize: 13, fontWeight: filter === f ? 700 : 500, color: filter === f ? (f === "Pemasukan" ? C.emD : f === "Pengeluaran" ? "#991b1b" : C.g700) : C.g500, fontFamily: "inherit" }}>
-            {f}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: COLORS.gray[800], margin: 0 }}>Laporan RAB & Keuangan</h1>
+          <p style={{ fontSize: 13, color: COLORS.gray[400], margin: "4px 0 0" }}>Transparansi keuangan qurban</p>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={() => toast("Laporan berhasil diexport ke PDF.", "success")}
+            style={{ background: "#f3f4f6", color: COLORS.gray[700], border: "1px solid #e5e7eb", borderRadius: 10, padding: "8px 16px", cursor: "pointer", fontSize: 14 }}>
+            📄 Export PDF
           </button>
-        ))}
+          <button onClick={() => toast("Laporan berhasil diexport ke Excel.", "success")}
+            style={{ background: "#f3f4f6", color: COLORS.gray[700], border: "1px solid #e5e7eb", borderRadius: 10, padding: "8px 16px", cursor: "pointer", fontSize: 14 }}>
+            📊 Export Excel
+          </button>
+          <button onClick={() => toast("Transaksi baru berhasil ditambahkan.", "success")}
+            style={{ background: COLORS.emerald.primary, color: "#fff", border: "none", borderRadius: 10, padding: "8px 18px", cursor: "pointer", fontSize: 14, fontWeight: 600 }}>
+            + Tambah Transaksi
+          </button>
+        </div>
       </div>
 
-      <Card>
-        <Table cols={["Tanggal", "Tipe", "Kategori", "Keterangan", "Jumlah", "Aksi"]}
-          empty={<EmptyState icon="💰" title="Belum ada transaksi" desc="Catat pemasukan dan pengeluaran" action={<Btn onClick={() => setModal({ mode: "add" })} color={C.em}>+ Tambah Transaksi</Btn>} />}
-          rows={filtered.map((k, i) => (
-            <TR key={k.id} even={i % 2 === 0}>
-              <TD small>{fDate(k.tanggal)}</TD>
-              <TD>
-                <span style={{ background: k.tipe === "Pemasukan" ? C.emL : C.redL, color: k.tipe === "Pemasukan" ? C.emD : "#991b1b", padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 700 }}>
-                  {k.tipe === "Pemasukan" ? "▲" : "▼"} {k.tipe}
-                </span>
-              </TD>
-              <TD small>{k.kategori}</TD>
-              <TD>{k.keterangan}</TD>
-              <TD bold><span style={{ color: k.tipe === "Pemasukan" ? C.emD : C.red }}>{k.tipe === "Pemasukan" ? "+" : "-"}{fRp(k.jumlah)}</span></TD>
-              <TD>
-                <div style={{ display: "flex", gap: 6 }}>
-                  <Btn small color={C.sky} onClick={() => setModal({ mode: "edit", ...k })}>✏</Btn>
-                  <Btn small color={C.red} onClick={() => setConfirm(k.id)}>🗑</Btn>
-                </div>
-              </TD>
-            </TR>
-          ))}
-        />
-      </Card>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 24 }}>
+        <div style={{ background: COLORS.emerald.light, border: `1px solid ${COLORS.emerald.mid}`, borderRadius: 14, padding: "18px 20px" }}>
+          <div style={{ fontSize: 12, color: COLORS.emerald.dark, fontWeight: 700, marginBottom: 8 }}>TOTAL PEMASUKAN</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: COLORS.emerald.dark }}>{formatRupiah(pemasukan)}</div>
+        </div>
+        <div style={{ background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: 14, padding: "18px 20px" }}>
+          <div style={{ fontSize: 12, color: "#991b1b", fontWeight: 700, marginBottom: 8 }}>TOTAL PENGELUARAN</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: "#991b1b" }}>{formatRupiah(pengeluaran)}</div>
+        </div>
+        <div style={{ background: COLORS.gold.light, border: `1px solid ${COLORS.gold.mid}`, borderRadius: 14, padding: "18px 20px" }}>
+          <div style={{ fontSize: 12, color: COLORS.gold.dark, fontWeight: 700, marginBottom: 8 }}>SALDO AKHIR</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: COLORS.gold.dark }}>{formatRupiah(pemasukan - pengeluaran)}</div>
+        </div>
+      </div>
 
-      {modal && (
-        <Modal title={modal.mode === "add" ? "Tambah Transaksi" : "Edit Transaksi"} onClose={() => setModal(null)}>
-          <KeuanganForm initial={modal.mode === "edit" ? modal : null} onSave={modal.mode === "add" ? add : edit} onClose={() => setModal(null)} />
-        </Modal>
-      )}
-      {confirm && <ConfirmModal msg="Yakin hapus transaksi ini?" onConfirm={() => del(confirm)} onClose={() => setConfirm(null)} />}
+      <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ background: COLORS.gray[50] }}>
+              {["Tipe", "Kategori", "Keterangan", "Tanggal", "Jumlah"].map(h => (
+                <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 12, fontWeight: 700, color: COLORS.gray[500], textTransform: "uppercase", letterSpacing: 0.5 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {dummyKeuangan.map((k, i) => (
+              <tr key={k.id} style={{ borderTop: "1px solid #f3f4f6" }}>
+                <td style={{ padding: "12px 16px" }}>
+                  <span style={{ background: k.tipe === "Pemasukan" ? COLORS.emerald.light : "#fee2e2", color: k.tipe === "Pemasukan" ? COLORS.emerald.dark : "#991b1b", padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 700 }}>
+                    {k.tipe === "Pemasukan" ? "▲" : "▼"} {k.tipe}
+                  </span>
+                </td>
+                <td style={{ padding: "12px 16px", fontSize: 13, color: COLORS.gray[600] }}>{k.kategori}</td>
+                <td style={{ padding: "12px 16px", fontSize: 14, color: COLORS.gray[800] }}>{k.keterangan}</td>
+                <td style={{ padding: "12px 16px", fontSize: 13, color: COLORS.gray[400] }}>{k.tanggal}</td>
+                <td style={{ padding: "12px 16px", fontSize: 14, fontWeight: 700, color: k.tipe === "Pemasukan" ? COLORS.emerald.dark : "#ef4444" }}>
+                  {k.tipe === "Pemasukan" ? "+" : "-"}{formatRupiah(k.jumlah)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
 
-// ============================================================
-// PENGATURAN PAGE
-// ============================================================
-function PengaturanPage({ settings, setSettings, toast, resetAll }) {
-  const [form, setForm] = useState(settings);
-  const f = k => v => setForm(p => ({ ...p, [k]: v }));
-  function save() { setSettings(form); toast("Pengaturan berhasil disimpan!", "success"); }
-
+function PengaturanPage() {
   return (
     <div style={{ maxWidth: 600 }}>
-      <PageHeader title="Pengaturan" sub="Konfigurasi aplikasi QurbanPro" />
-      <Card style={{ padding: "24px" }}>
-        <Inp label="Nama Masjid / Komunitas" value={form.namaLembaga} onChange={f("namaLembaga")} />
-        <Inp label="Nama Ketua Panitia" value={form.ketua} onChange={f("ketua")} />
-        <Inp label="WhatsApp Panitia" value={form.wa} onChange={f("wa")} type="tel" />
-        <Inp label="Tanggal Idul Adha" value={form.tanggal} onChange={f("tanggal")} type="date" />
-        <Inp label="Lokasi Penyembelihan" value={form.lokasi} onChange={f("lokasi")} />
-        <Btn onClick={save} color={C.em}>💾 Simpan Pengaturan</Btn>
-      </Card>
-
-      <Card style={{ padding: "24px", marginTop: 16, border: `1px solid #fca5a5` }}>
-        <h3 style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 800, color: C.red }}>⚠ Zona Bahaya</h3>
-        <p style={{ fontSize: 13, color: C.g500, margin: "0 0 16px" }}>Reset semua data ke kondisi awal. Tindakan ini tidak bisa dibatalkan.</p>
-        <Btn onClick={resetAll} color={C.red}>🗑 Reset Semua Data</Btn>
-      </Card>
+      <h1 style={{ fontSize: 22, fontWeight: 800, color: COLORS.gray[800], marginBottom: 6 }}>Pengaturan</h1>
+      <p style={{ fontSize: 14, color: COLORS.gray[400], marginBottom: 28 }}>Konfigurasi aplikasi QurbanPro Anda.</p>
+      {[
+        { label: "Nama Masjid/Komunitas", val: "Masjid Al-Ikhlas" },
+        { label: "Ketua Panitia", val: "H. Ahmad Fauzi" },
+        { label: "Nomor WhatsApp Panitia", val: "0812-3456-7890" },
+        { label: "Tanggal Idul Adha", val: "9 Juni 2025" },
+        { label: "Lokasi Penyembelihan", val: "Lapangan Masjid Al-Ikhlas" },
+      ].map(f => (
+        <div key={f.label} style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: 13, fontWeight: 600, color: COLORS.gray[600], display: "block", marginBottom: 6 }}>{f.label}</label>
+          <input defaultValue={f.val} style={{ width: "100%", padding: "10px 16px", borderRadius: 10, border: "1px solid #e5e7eb", fontSize: 14, boxSizing: "border-box" }} />
+        </div>
+      ))}
+      <button style={{ background: COLORS.emerald.primary, color: "#fff", border: "none", borderRadius: 10, padding: "10px 28px", cursor: "pointer", fontSize: 14, fontWeight: 700 }}>
+        💾 Simpan Pengaturan
+      </button>
     </div>
   );
 }
 
-// ============================================================
-// APP SHELL
-// ============================================================
-function AppShell({ onLogout }) {
+function AppLayout() {
   const [page, setPage] = useState("dashboard");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [toasts, setToasts] = useState([]);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  const [hewan, setHewan] = useLocalStorage(STORAGE_KEYS.hewan, INIT_HEWAN);
-  const [mudhohi, setMudhohi] = useLocalStorage(STORAGE_KEYS.mudhohi, INIT_MUDHOHI);
-  const [mustahiq, setMustahiq] = useLocalStorage(STORAGE_KEYS.mustahiq, INIT_MUSTAHIQ);
-  const [sesi, setSesi] = useLocalStorage(STORAGE_KEYS.sesi, INIT_SESI);
-  const [keuangan, setKeuangan] = useLocalStorage(STORAGE_KEYS.keuangan, INIT_KEUANGAN);
-  const [settings, setSettings] = useLocalStorage(STORAGE_KEYS.settings, INIT_SETTINGS);
-
-  useEffect(() => {
-    const h = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", h);
-    return () => window.removeEventListener("resize", h);
-  }, []);
-
-  function toast(msg, type = "info") {
-    const id = uid();
+  function addToast(msg, type = "info") {
+    const id = Date.now();
     setToasts(t => [...t, { id, msg, type }]);
   }
   function removeToast(id) { setToasts(t => t.filter(x => x.id !== id)); }
 
-  function resetAll() {
-    if (!window.confirm("YAKIN reset semua data? Ini tidak bisa dibatalkan!")) return;
-    Object.values(STORAGE_KEYS).forEach(k => localStorage.removeItem(k));
-    window.location.reload();
-  }
-
   const pages = {
-    dashboard: <Dashboard hewan={hewan} mudhohi={mudhohi} mustahiq={mustahiq} keuangan={keuangan} setPage={setPage} />,
-    hewan: <HewanPage hewan={hewan} setHewan={setHewan} toast={toast} />,
-    mudhohi: <MudhohiPage mudhohi={mudhohi} setMudhohi={setMudhohi} toast={toast} />,
-    mustahiq: <MustahiqPage mustahiq={mustahiq} setMustahiq={setMustahiq} sesi={sesi} toast={toast} />,
-    sesi: <SesiPage sesi={sesi} setSesi={setSesi} mustahiq={mustahiq} toast={toast} />,
-    scan: <ScanPage mustahiq={mustahiq} setMustahiq={setMustahiq} toast={toast} />,
-    keuangan: <KeuanganPage keuangan={keuangan} setKeuangan={setKeuangan} toast={toast} />,
-    pengaturan: <PengaturanPage settings={settings} setSettings={setSettings} toast={toast} resetAll={resetAll} />,
+    dashboard: <Dashboard toast={addToast} />,
+    hewan: <HewanPage toast={addToast} />,
+    mudhohi: <MudhohibPage toast={addToast} />,
+    mustahiq: <MustahiqPage toast={addToast} />,
+    sesi: <SesiPage toast={addToast} />,
+    scan: <ScanPage toast={addToast} />,
+    keuangan: <KeuanganPage toast={addToast} />,
+    pengaturan: <PengaturanPage />,
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: C.g50, fontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" }}>
-      <style>{`
-        @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        * { box-sizing: border-box; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 99px; }
-        input:focus, select:focus, textarea:focus { border-color: #059669 !important; box-shadow: 0 0 0 3px #05966920; }
-      `}</style>
-
-      {/* Mobile overlay */}
-      {isMobile && sidebarOpen && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200 }} onClick={() => setSidebarOpen(false)}>
-          <div style={{ width: 240, height: "100%" }} onClick={e => e.stopPropagation()}>
-            <Sidebar active={page} setActive={setPage} mobile onClose={() => setSidebarOpen(false)} />
+    <div style={{ display: "flex", minHeight: "100vh", background: COLORS.gray[50], fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+      <Sidebar active={page} setActive={setPage} collapsed={collapsed} setCollapsed={setCollapsed} />
+      <main style={{ flex: 1, overflow: "auto", padding: "28px 32px", minWidth: 0 }}>
+        {pages[page] || (
+          <div style={{ textAlign: "center", padding: "80px 0", color: COLORS.gray[400] }}>
+            <div style={{ fontSize: 64, marginBottom: 16 }}>🚧</div>
+            <h2 style={{ fontWeight: 700, color: COLORS.gray[600] }}>Segera Hadir</h2>
+            <p>Fitur ini tersedia di versi lengkap QurbanPro.</p>
           </div>
-        </div>
-      )}
-
-      {/* Desktop sidebar */}
-      {!isMobile && <Sidebar active={page} setActive={setPage} />}
-
-      {/* Main */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        {/* Top bar */}
-        <div style={{ background: "#fff", borderBottom: `1px solid ${C.g200}`, padding: "0 20px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {isMobile && (
-              <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "none", fontSize: 22, cursor: "pointer", color: C.g600, padding: "4px 6px", lineHeight: 1 }}>☰</button>
-            )}
-            <div>
-              <span style={{ fontSize: 15, fontWeight: 700, color: C.g800 }}>{settings.namaLembaga}</span>
-              {isMobile && <span style={{ fontSize: 13, color: C.g400, marginLeft: 8 }}>{MENUS.find(m => m.key === page)?.label}</span>}
-            </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 8, height: 8, background: C.em, borderRadius: "50%", boxShadow: `0 0 0 3px ${C.emL}` }} />
-            <span style={{ fontSize: 13, color: C.g500 }}>Admin</span>
-            <button onClick={onLogout} style={{ background: C.g100, border: "none", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 13, color: C.g600, fontFamily: "inherit" }}>Keluar</button>
-          </div>
-        </div>
-
-        {/* Page content */}
-        <main style={{ flex: 1, overflow: "auto", padding: isMobile ? "16px" : "24px 28px" }}>
-          {pages[page]}
-        </main>
-      </div>
-
-      {/* Toasts */}
-      <div style={{ position: "fixed", bottom: 20, right: 20, display: "flex", flexDirection: "column", gap: 10, zIndex: 99999 }}>
-        {toasts.map(t => <Toast key={t.id} msg={t.msg} type={t.type} onClose={() => removeToast(t.id)} />)}
-      </div>
+        )}
+      </main>
+      {toasts.map(t => <Toast key={t.id} msg={t.msg} type={t.type} onClose={() => removeToast(t.id)} />)}
     </div>
   );
 }
 
-// ============================================================
-// LOGIN PAGE
-// ============================================================
-function LoginPage({ onLogin }) {
-  const [email, setEmail] = useState("admin@masjid.com");
-  const [pass, setPass] = useState("password");
-  const [loading, setLoading] = useState(false);
-  function submit() {
-    if (!email || !pass) return alert("Isi email dan password!");
-    setLoading(true);
-    setTimeout(() => { setLoading(false); onLogin(); }, 800);
-  }
-  return (
-    <div style={{ minHeight: "100vh", background: `linear-gradient(150deg, ${C.emD} 0%, #021f15 100%)`, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
-      <div style={{ background: "#fff", borderRadius: 24, padding: "44px 40px", width: "100%", maxWidth: 400, boxShadow: "0 32px 100px rgba(0,0,0,0.3)" }}>
-        <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ fontSize: 48, marginBottom: 10 }}>🌙</div>
-          <h1 style={{ fontSize: 28, fontWeight: 900, margin: 0 }}><span style={{ color: C.em }}>Qurban</span><span style={{ color: C.gold }}>Pro</span></h1>
-          <p style={{ fontSize: 14, color: C.g400, marginTop: 6 }}>Masuk ke dashboard panitia</p>
-        </div>
-        <Inp label="Email" value={email} onChange={setEmail} type="email" placeholder="admin@masjid.com" />
-        <Inp label="Password" value={pass} onChange={setPass} type="password" placeholder="••••••••" />
-        <button onClick={submit} disabled={loading}
-          style={{ width: "100%", background: loading ? C.g300 : C.em, color: "#fff", border: "none", borderRadius: 14, padding: "14px", cursor: loading ? "not-allowed" : "pointer", fontSize: 16, fontWeight: 800, marginTop: 8, fontFamily: "inherit", transition: "background 0.2s" }}>
-          {loading ? "Memuat..." : "Masuk ke Dashboard →"}
-        </button>
-        <div style={{ marginTop: 16, background: C.g50, borderRadius: 10, padding: "12px 16px", textAlign: "center" }}>
-          <p style={{ fontSize: 12, color: C.g400, margin: 0 }}>Demo: gunakan email & password apapun</p>
-        </div>
-      </div>
-    </div>
-  );
-}
+// ============ LANDING PAGE ============
 
-// ============================================================
-// LANDING PAGE
-// ============================================================
 function LandingPage({ onEnter }) {
-  const feats = [
-    { icon: "🐄", t: "Manajemen Hewan", d: "CRUD data sapi & kambing, workflow status lengkap, notif WA otomatis." },
-    { icon: "👥", t: "Data Mudhohi", d: "Input peserta qurban, kelola pembayaran, generate sertifikat otomatis." },
-    { icon: "🎫", t: "Kupon Digital QR", d: "Setiap mustahiq dapat kupon unik. Scan untuk validasi, cegah double-claim." },
-    { icon: "📅", t: "Sesi Distribusi", d: "Buat jadwal pembagian, batasi kuota per sesi, tampilkan antrean." },
-    { icon: "💰", t: "Laporan Keuangan", d: "RAB transparan, CRUD transaksi, export CSV, saldo real-time." },
-    { icon: "🔒", t: "Role-based Access", d: "Hak akses per jabatan panitia. Admin, bendahara, tim distribusi, dll." },
+  const [hoveredPlan, setHoveredPlan] = useState(1);
+
+  const features = [
+    { icon: "🐄", title: "Manajemen Hewan", desc: "Kelola sapi & kambing dengan workflow status lengkap dari terdaftar hingga selesai." },
+    { icon: "👥", title: "Data Mudhohi", desc: "Input peserta qurban individu/kelompok, generate sertifikat & bukti pendaftaran otomatis." },
+    { icon: "🎫", title: "Kupon Digital QR", desc: "Setiap mustahiq dapat kupon QR unik. Scan untuk validasi, cegah kupon ganda." },
+    { icon: "📱", title: "Notifikasi WhatsApp", desc: "Kirim notif otomatis ke mudhohi saat status hewan berubah & jadwal distribusi." },
+    { icon: "💰", title: "Laporan Keuangan", desc: "RAB transparan, export Excel/PDF, mudah dipahami jamaah dan pengurus." },
+    { icon: "🔒", title: "Role-based Access", desc: "Setiap anggota panitia hanya akses menu sesuai jabatan. Aman dan terstruktur." },
   ];
+
+  const steps = [
+    { n: "01", title: "Daftarkan Hewan & Mudhohi", desc: "Input data sapi/kambing dan peserta qurban dengan mudah." },
+    { n: "02", title: "Generate Kupon Digital", desc: "Sistem otomatis buat kupon QR untuk setiap mustahiq." },
+    { n: "03", title: "Distribusi & Scan", desc: "Panitia scan kupon saat pembagian. Cegah double-claim." },
+    { n: "04", title: "Laporan Transparan", desc: "Export laporan keuangan & distribusi untuk jamaah." },
+  ];
+
+  const plans = [
+    { name: "Masjid", price: "Gratis", period: "", features: ["1 Event Qurban", "Hingga 50 Mustahiq", "Fitur Dasar", "Support Email"], cta: "Mulai Gratis" },
+    { name: "Komunitas", price: "299.000", period: "/tahun", features: ["Unlimited Event", "Unlimited Mustahiq", "Semua Fitur", "Export PDF/Excel", "Prioritas Support"], cta: "Pilih Paket Ini", popular: true },
+    { name: "Enterprise", price: "Custom", period: "", features: ["Multi Cabang", "Custom Domain", "API Integration", "Dedicated Support", "Training Panitia"], cta: "Hubungi Kami" },
+  ];
+
   return (
-    <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
-      {/* Nav */}
-      <nav style={{ position: "sticky", top: 0, background: "rgba(255,255,255,0.96)", backdropFilter: "blur(12px)", borderBottom: `1px solid ${C.g200}`, padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 100 }}>
-        <div style={{ fontSize: 20, fontWeight: 900 }}><span style={{ color: C.em }}>Qurban</span><span style={{ color: C.gold }}>Pro</span></div>
-        <button onClick={onEnter} style={{ background: C.em, color: "#fff", border: "none", borderRadius: 10, padding: "8px 22px", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "inherit" }}>Coba Sekarang</button>
+    <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", background: "#fff", color: COLORS.gray[800] }}>
+      {/* Navbar */}
+      <nav style={{ position: "sticky", top: 0, background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid #e5e7eb", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64, zIndex: 100 }}>
+        <div style={{ fontSize: 22, fontWeight: 800 }}><span style={{ color: COLORS.emerald.primary }}>Qurban</span><span style={{ color: COLORS.gold.primary }}>Pro</span></div>
+        <div style={{ display: "flex", gap: 28, alignItems: "center" }}>
+          {["Fitur", "Cara Kerja", "Harga"].map(l => <a key={l} href="#" style={{ fontSize: 14, color: COLORS.gray[600], textDecoration: "none" }}>{l}</a>)}
+          <button onClick={onEnter} style={{ background: COLORS.emerald.primary, color: "#fff", border: "none", borderRadius: 10, padding: "8px 20px", cursor: "pointer", fontSize: 14, fontWeight: 700 }}>
+            Coba Sekarang
+          </button>
+        </div>
       </nav>
 
       {/* Hero */}
-      <div style={{ background: "linear-gradient(150deg, #f0fdf4 0%, #fefce8 100%)", padding: "72px 24px 80px", textAlign: "center" }}>
-        <div style={{ display: "inline-block", background: C.emL, color: C.emD, padding: "5px 16px", borderRadius: 99, fontSize: 12, fontWeight: 700, marginBottom: 22 }}>🌙 Platform Manajemen Qurban #1 Indonesia</div>
-        <h1 style={{ fontSize: "clamp(28px, 5vw, 54px)", fontWeight: 900, margin: "0 auto 18px", maxWidth: 700, lineHeight: 1.15, color: C.g900 }}>
-          Kelola Qurban Lebih <span style={{ color: C.em }}>Rapi</span>,{" "}
-          <span style={{ color: C.gold }}>Transparan</span>, dan Tanpa Chaos
-        </h1>
-        <p style={{ fontSize: 17, color: C.g500, maxWidth: 520, margin: "0 auto 36px", lineHeight: 1.7 }}>
-          Satu platform untuk panitia masjid mengelola mudhohi, hewan, kupon digital, distribusi daging, dan laporan keuangan.
-        </p>
-        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-          <button onClick={onEnter} style={{ background: C.em, color: "#fff", border: "none", borderRadius: 14, padding: "14px 36px", cursor: "pointer", fontSize: 16, fontWeight: 800, boxShadow: `0 8px 24px ${C.em}50`, fontFamily: "inherit" }}>🚀 Coba Gratis Sekarang</button>
-          <button style={{ background: "#fff", color: C.g700, border: `1px solid ${C.g200}`, borderRadius: 14, padding: "14px 32px", cursor: "pointer", fontSize: 16, fontWeight: 600, fontFamily: "inherit" }}>📹 Lihat Demo</button>
+      <div style={{ background: `linear-gradient(150deg, #f0fdf4 0%, #fefce8 100%)`, padding: "80px 32px 90px", textAlign: "center", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -60, right: -60, width: 400, height: 400, background: `radial-gradient(circle, ${COLORS.emerald.primary}18 0%, transparent 70%)`, borderRadius: "50%" }} />
+        <div style={{ position: "absolute", bottom: -80, left: -80, width: 500, height: 500, background: `radial-gradient(circle, ${COLORS.gold.primary}12 0%, transparent 70%)`, borderRadius: "50%" }} />
+        <div style={{ display: "inline-block", background: COLORS.emerald.light, color: COLORS.emerald.dark, padding: "6px 18px", borderRadius: 99, fontSize: 13, fontWeight: 700, marginBottom: 24 }}>
+          🌙 Platform Manajemen Qurban #1 Indonesia
         </div>
-        <div style={{ display: "flex", justifyContent: "center", gap: 40, marginTop: 48, flexWrap: "wrap" }}>
-          {[["500+", "Masjid"], ["50.000+", "Mustahiq"], ["99.9%", "Uptime"]].map(([n, l]) => (
+        <h1 style={{ fontSize: "clamp(32px, 5vw, 58px)", fontWeight: 900, lineHeight: 1.15, margin: "0 auto 20px", maxWidth: 800, color: COLORS.gray[900] }}>
+          Kelola Qurban Lebih{" "}
+          <span style={{ color: COLORS.emerald.primary }}>Rapi</span>,{" "}
+          <span style={{ color: COLORS.gold.primary }}>Transparan</span>, dan{" "}
+          <span style={{ background: `linear-gradient(135deg, ${COLORS.emerald.primary}, ${COLORS.gold.primary})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Tanpa Chaos</span>
+        </h1>
+        <p style={{ fontSize: 18, color: COLORS.gray[500], maxWidth: 600, margin: "0 auto 36px", lineHeight: 1.7 }}>
+          Satu platform untuk panitia masjid mengelola mudhohi, hewan, kupon digital, distribusi daging, dan laporan keuangan secara profesional.
+        </p>
+        <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
+          <button onClick={onEnter}
+            style={{ background: COLORS.emerald.primary, color: "#fff", border: "none", borderRadius: 14, padding: "15px 36px", cursor: "pointer", fontSize: 17, fontWeight: 800, boxShadow: `0 8px 24px ${COLORS.emerald.primary}50` }}>
+            🚀 Coba Sekarang — Gratis
+          </button>
+          <button style={{ background: "#fff", color: COLORS.gray[700], border: "1px solid #e5e7eb", borderRadius: 14, padding: "15px 36px", cursor: "pointer", fontSize: 17, fontWeight: 600 }}>
+            📹 Lihat Demo
+          </button>
+        </div>
+        <div style={{ display: "flex", justifyContent: "center", gap: 36, marginTop: 48, flexWrap: "wrap" }}>
+          {[["500+", "Masjid & Komunitas"], ["50.000+", "Mustahiq Terkelola"], ["99.9%", "Uptime Terjamin"]].map(([n, l]) => (
             <div key={n} style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 26, fontWeight: 900, color: C.emD }}>{n}</div>
-              <div style={{ fontSize: 12, color: C.g400 }}>{l}</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: COLORS.emerald.dark }}>{n}</div>
+              <div style={{ fontSize: 13, color: COLORS.gray[400] }}>{l}</div>
             </div>
           ))}
         </div>
       </div>
 
+      {/* Dashboard mockup banner */}
+      <div style={{ background: COLORS.emerald.dark, padding: "60px 32px", textAlign: "center" }}>
+        <div style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 20, padding: "32px", maxWidth: 800, margin: "0 auto", cursor: "pointer" }} onClick={onEnter}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
+            {[["24", "Hewan Qurban", "🐄"], ["134", "Mudhohi", "👥"], ["312", "Mustahiq", "🤲"], ["60%", "Distribusi", "📊"]].map(([v, l, e]) => (
+              <div key={l} style={{ background: "rgba(255,255,255,0.1)", borderRadius: 12, padding: "16px 12px", textAlign: "center" }}>
+                <div style={{ fontSize: 28, marginBottom: 4 }}>{e}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#fff" }}>{v}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }}>{l}</div>
+              </div>
+            ))}
+          </div>
+          <button onClick={onEnter} style={{ background: COLORS.gold.primary, color: "#fff", border: "none", borderRadius: 12, padding: "12px 32px", cursor: "pointer", fontSize: 15, fontWeight: 700 }}>
+            ✨ Lihat Dashboard Lengkap →
+          </button>
+        </div>
+      </div>
+
       {/* Features */}
-      <div style={{ padding: "72px 24px", background: "#fff" }}>
-        <h2 style={{ textAlign: "center", fontSize: 34, fontWeight: 900, margin: "0 0 48px", color: C.g900 }}>Semua yang Panitia Butuhkan</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 18, maxWidth: 1000, margin: "0 auto" }}>
-          {feats.map(f => (
-            <div key={f.t} style={{ background: C.g50, borderRadius: 18, border: `1px solid ${C.g200}`, padding: "26px 24px" }}>
-              <div style={{ fontSize: 34, marginBottom: 14 }}>{f.icon}</div>
-              <h3 style={{ fontSize: 16, fontWeight: 800, margin: "0 0 10px", color: C.g800 }}>{f.t}</h3>
-              <p style={{ fontSize: 13, color: C.g500, margin: 0, lineHeight: 1.7 }}>{f.d}</p>
+      <div style={{ padding: "80px 32px", background: COLORS.gray[50] }}>
+        <div style={{ textAlign: "center", marginBottom: 56 }}>
+          <h2 style={{ fontSize: 38, fontWeight: 900, margin: 0 }}>Semua yang Panitia Butuhkan</h2>
+          <p style={{ fontSize: 16, color: COLORS.gray[400], marginTop: 12 }}>Dari pendaftaran hingga laporan akhir, semua dalam satu platform.</p>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20, maxWidth: 1100, margin: "0 auto" }}>
+          {features.map(f => (
+            <div key={f.title} style={{ background: "#fff", borderRadius: 18, border: "1px solid #e5e7eb", padding: "28px 26px", transition: "transform 0.2s, box-shadow 0.2s" }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(0,0,0,0.08)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}>
+              <div style={{ fontSize: 36, marginBottom: 16 }}>{f.icon}</div>
+              <h3 style={{ fontSize: 17, fontWeight: 800, margin: "0 0 10px" }}>{f.title}</h3>
+              <p style={{ fontSize: 14, color: COLORS.gray[500], margin: 0, lineHeight: 1.7 }}>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Steps */}
+      <div style={{ padding: "80px 32px", maxWidth: 900, margin: "0 auto" }}>
+        <div style={{ textAlign: "center", marginBottom: 56 }}>
+          <h2 style={{ fontSize: 38, fontWeight: 900, margin: 0 }}>Mudah Digunakan Panitia Masjid</h2>
+          <p style={{ fontSize: 16, color: COLORS.gray[400], marginTop: 12 }}>Tidak perlu keahlian IT — panitia siap dalam hitungan menit.</p>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20 }}>
+          {steps.map(s => (
+            <div key={s.n} style={{ textAlign: "center", padding: "24px 16px" }}>
+              <div style={{ width: 56, height: 56, background: `linear-gradient(135deg, ${COLORS.emerald.primary}, ${COLORS.gold.primary})`, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 18, fontWeight: 800, color: "#fff" }}>{s.n}</div>
+              <h3 style={{ fontSize: 16, fontWeight: 800, margin: "0 0 10px" }}>{s.title}</h3>
+              <p style={{ fontSize: 13, color: COLORS.gray[500], margin: 0, lineHeight: 1.7 }}>{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Pricing */}
+      <div style={{ padding: "80px 32px", background: COLORS.gray[50] }}>
+        <div style={{ textAlign: "center", marginBottom: 56 }}>
+          <h2 style={{ fontSize: 38, fontWeight: 900, margin: 0 }}>Paket Harga Terjangkau</h2>
+          <p style={{ fontSize: 16, color: COLORS.gray[400], marginTop: 12 }}>Cocok untuk masjid kecil hingga komunitas besar.</p>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20, maxWidth: 860, margin: "0 auto" }}>
+          {plans.map((p, i) => (
+            <div key={p.name}
+              onMouseEnter={() => setHoveredPlan(i)}
+              onMouseLeave={() => setHoveredPlan(1)}
+              style={{
+                background: "#fff", borderRadius: 20, padding: "28px 24px",
+                border: (hoveredPlan === i || p.popular) ? `2px solid ${COLORS.emerald.primary}` : "2px solid #e5e7eb",
+                position: "relative", transition: "all 0.2s", transform: p.popular ? "scale(1.04)" : "none",
+                boxShadow: p.popular ? "0 12px 40px rgba(5,150,105,0.15)" : "none"
+              }}>
+              {p.popular && (
+                <div style={{ position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)", background: COLORS.emerald.primary, color: "#fff", padding: "4px 18px", borderRadius: 99, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>
+                  ⭐ Paling Populer
+                </div>
+              )}
+              <div style={{ fontSize: 18, fontWeight: 800, color: COLORS.gray[700], marginBottom: 8 }}>{p.name}</div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 20 }}>
+                {p.price !== "Custom" && <span style={{ fontSize: 12, color: COLORS.gray[400] }}>Rp</span>}
+                <span style={{ fontSize: 32, fontWeight: 900, color: COLORS.emerald.dark }}>{p.price}</span>
+                <span style={{ fontSize: 13, color: COLORS.gray[400] }}>{p.period}</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
+                {p.features.map(f => (
+                  <div key={f} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: COLORS.gray[600] }}>
+                    <span style={{ color: COLORS.emerald.primary, fontWeight: 800 }}>✓</span> {f}
+                  </div>
+                ))}
+              </div>
+              <button onClick={onEnter}
+                style={{ width: "100%", background: p.popular ? COLORS.emerald.primary : "#f3f4f6", color: p.popular ? "#fff" : COLORS.gray[700], border: "none", borderRadius: 12, padding: "12px", cursor: "pointer", fontSize: 14, fontWeight: 700 }}>
+                {p.cta}
+              </button>
             </div>
           ))}
         </div>
       </div>
 
       {/* CTA */}
-      <div style={{ background: `linear-gradient(135deg, ${C.emD}, #0a4d39)`, padding: "72px 24px", textAlign: "center", color: "#fff" }}>
-        <h2 style={{ fontSize: 36, fontWeight: 900, margin: "0 0 14px" }}>Siap Kelola Qurban Lebih Profesional?</h2>
-        <p style={{ fontSize: 16, opacity: 0.7, marginBottom: 32, maxWidth: 460, margin: "0 auto 32px" }}>Bergabung bersama ratusan masjid yang sudah mempercayakan QurbanPro.</p>
-        <button onClick={onEnter} style={{ background: C.gold, color: "#fff", border: "none", borderRadius: 14, padding: "16px 44px", cursor: "pointer", fontSize: 18, fontWeight: 900, boxShadow: "0 8px 30px rgba(0,0,0,0.25)", fontFamily: "inherit" }}>
+      <div style={{ background: `linear-gradient(135deg, ${COLORS.emerald.dark} 0%, #0a4d39 100%)`, padding: "80px 32px", textAlign: "center", color: "#fff" }}>
+        <h2 style={{ fontSize: 40, fontWeight: 900, margin: "0 0 16px" }}>Siap untuk Qurban yang Lebih Teratur?</h2>
+        <p style={{ fontSize: 17, opacity: 0.75, marginBottom: 36, maxWidth: 500, margin: "0 auto 36px" }}>
+          Bergabung dengan 500+ masjid dan komunitas yang sudah mempercayakan QurbanPro untuk manajemen qurban mereka.
+        </p>
+        <button onClick={onEnter}
+          style={{ background: COLORS.gold.primary, color: "#fff", border: "none", borderRadius: 16, padding: "18px 48px", cursor: "pointer", fontSize: 20, fontWeight: 900, boxShadow: "0 8px 30px rgba(0,0,0,0.25)" }}>
           🚀 Mulai Sekarang — Gratis
         </button>
+        <p style={{ marginTop: 16, opacity: 0.5, fontSize: 13 }}>Tidak perlu kartu kredit · Setup dalam 5 menit</p>
       </div>
 
-      <footer style={{ background: C.g900, color: "rgba(255,255,255,0.4)", padding: "20px 24px", textAlign: "center", fontSize: 13 }}>
-        © 2025 QurbanPro · Dibuat untuk kemudahan panitia masjid Indonesia 🌙
+      <footer style={{ background: COLORS.gray[900], color: "rgba(255,255,255,0.5)", padding: "24px 32px", textAlign: "center", fontSize: 13 }}>
+        © 2025 QurbanPro · Dibuat dengan ❤️ untuk kemudahan panitia masjid Indonesia
       </footer>
     </div>
   );
 }
 
-// ============================================================
-// ROOT
-// ============================================================
-export default function App() {
-  const [screen, setScreen] = useState("landing");
+// ============ LOGIN ============
+function LoginPage({ onLogin }) {
+  const [user, setUser] = useState("admin@masjid.com");
+  const [pass, setPass] = useState("password");
   return (
-    <>
+    <div style={{ minHeight: "100vh", background: `linear-gradient(150deg, ${COLORS.emerald.dark} 0%, #0a3d2b 100%)`, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+      <div style={{ background: "#fff", borderRadius: 24, padding: "44px 40px", width: "100%", maxWidth: 420, boxShadow: "0 24px 80px rgba(0,0,0,0.25)" }}>
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <div style={{ fontSize: 40, marginBottom: 8 }}>🌙</div>
+          <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}><span style={{ color: COLORS.emerald.primary }}>Qurban</span><span style={{ color: COLORS.gold.primary }}>Pro</span></h1>
+          <p style={{ fontSize: 14, color: COLORS.gray[400], marginTop: 6 }}>Masuk ke dashboard panitia Anda</p>
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: 13, fontWeight: 600, color: COLORS.gray[600], display: "block", marginBottom: 6 }}>Email</label>
+          <input value={user} onChange={e => setUser(e.target.value)} style={{ width: "100%", padding: "11px 16px", borderRadius: 12, border: "1px solid #e5e7eb", fontSize: 15, boxSizing: "border-box" }} />
+        </div>
+        <div style={{ marginBottom: 24 }}>
+          <label style={{ fontSize: 13, fontWeight: 600, color: COLORS.gray[600], display: "block", marginBottom: 6 }}>Password</label>
+          <input type="password" value={pass} onChange={e => setPass(e.target.value)} style={{ width: "100%", padding: "11px 16px", borderRadius: 12, border: "1px solid #e5e7eb", fontSize: 15, boxSizing: "border-box" }} />
+        </div>
+        <button onClick={onLogin} style={{ width: "100%", background: COLORS.emerald.primary, color: "#fff", border: "none", borderRadius: 14, padding: "14px", cursor: "pointer", fontSize: 16, fontWeight: 800, boxShadow: `0 6px 20px ${COLORS.emerald.primary}40` }}>
+          Masuk ke Dashboard →
+        </button>
+        <div style={{ marginTop: 16, textAlign: "center", padding: "12px 16px", background: COLORS.gray[50], borderRadius: 10 }}>
+          <p style={{ fontSize: 12, color: COLORS.gray[400], margin: 0 }}>Demo: gunakan email & password apapun</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============ ROOT ============
+export default function App() {
+  const [screen, setScreen] = useState("landing"); // landing | login | app
+  return (
+    <div>
       {screen === "landing" && <LandingPage onEnter={() => setScreen("login")} />}
       {screen === "login" && <LoginPage onLogin={() => setScreen("app")} />}
-      {screen === "app" && <AppShell onLogout={() => setScreen("login")} />}
-    </>
+      {screen === "app" && <AppLayout />}
+    </div>
   );
 }
