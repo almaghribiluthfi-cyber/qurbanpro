@@ -496,7 +496,8 @@ function HewanForm({ initial, onSave, onClose }) {
         </div>
       </div>
 
-      <div className="form-grid"> value={form.kode} onChange={f("kode")} placeholder="SAP-001" required />
+      <div className="form-grid">
+        <Inp label="Kode Hewan" value={form.kode} onChange={f("kode")} placeholder="SAP-001" required />
         <Inp label="Jenis" value={form.jenis} onChange={f("jenis")} options={["Sapi", "Kambing"]} required />
         <Inp label="Berat (kg)" value={form.berat} onChange={f("berat")} type="number" min="1" required />
         <Inp label="Harga (Rp)" value={form.harga} onChange={f("harga")} type="number" min="0" step="1000" required />
