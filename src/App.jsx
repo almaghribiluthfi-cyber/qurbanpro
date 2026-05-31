@@ -217,6 +217,7 @@ const MENUS = [
   { key: "mustahiq", label: "Mustahiq", icon: "🤲" },
   { key: "sesi", label: "Sesi Distribusi", icon: "📅" },
   { key: "scan", label: "Scan Kupon", icon: "🔍" },
+  { key: "cetak", label: "Cetak Kupon", icon: "🖨️" },
   { key: "keuangan", label: "Laporan RAB", icon: "💰" },
   { key: "pengaturan", label: "Pengaturan", icon: "⚙️" },
 ];
@@ -268,7 +269,7 @@ function Dashboard({ hewan, mudhohi, mustahiq, keuangan, setPage }) {
       </div>
 
       {/* Stat Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 14, marginBottom: 22 }}>
+      <div className="stat-grid" style={{ marginBottom: 18 }}>
         {[
           { label: "Total Hewan", val: hewan.length, icon: "🐄", col: C.em, sub: `${hewan.filter(h=>h.jenis==="Sapi").length} sapi · ${hewan.filter(h=>h.jenis==="Kambing").length} kambing` },
           { label: "Total Mudhohi", val: mudhohi.length, icon: "👥", col: C.gold, sub: `${mudhohi.filter(m=>m.pembayaran==="Lunas").length} lunas` },
@@ -288,7 +289,7 @@ function Dashboard({ hewan, mudhohi, mustahiq, keuangan, setPage }) {
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+      <div className="dash-grid" style={{ marginBottom: 16 }}>
         {/* Status Hewan */}
         <Card style={{ padding: "20px" }}>
           <h3 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 800, color: C.g700 }}>Status Hewan Qurban</h3>
@@ -385,8 +386,8 @@ function Dashboard({ hewan, mudhohi, mustahiq, keuangan, setPage }) {
 function Table({ cols, rows, empty }) {
   if (rows.length === 0) return empty;
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}>
+    <div className="tbl-wrap">
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr style={{ background: C.g50 }}>
             {cols.map(c => <th key={c} style={{ padding: "11px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.g500, textTransform: "uppercase", letterSpacing: 0.4, whiteSpace: "nowrap" }}>{c}</th>)}
@@ -410,22 +411,22 @@ function TD({ children, bold, small, mono }) {
 // ============================================================
 function PageHeader({ title, sub, children }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 22, flexWrap: "wrap", gap: 12 }}>
+    <div className="page-header">
       <div>
-        <h1 style={{ fontSize: 22, fontWeight: 900, color: C.g900, margin: 0 }}>{title}</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 900, color: C.g900, margin: 0 }}>{title}</h1>
         {sub && <p style={{ fontSize: 13, color: C.g400, margin: "4px 0 0" }}>{sub}</p>}
       </div>
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>{children}</div>
+      <div className="page-header-actions">{children}</div>
     </div>
   );
 }
 
 function SearchBar({ value, onChange, placeholder = "Cari..." }) {
   return (
-    <div style={{ position: "relative" }}>
-      <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: C.g400, fontSize: 14 }}>🔎</span>
+    <div style={{ position: "relative", flex: 1, minWidth: 160, maxWidth: 240 }}>
+      <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: C.g400, fontSize: 13, pointerEvents: "none" }}>🔎</span>
       <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        style={{ padding: "8px 14px 8px 34px", borderRadius: 10, border: `1px solid ${C.g200}`, fontSize: 14, width: 200, fontFamily: "inherit", outline: "none" }} />
+        style={{ padding: "8px 12px 8px 30px", borderRadius: 10, border: `1px solid ${C.g200}`, fontSize: 14, width: "100%", fontFamily: "inherit", outline: "none" }} />
     </div>
   );
 }
@@ -495,8 +496,7 @@ function HewanForm({ initial, onSave, onClose }) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
-        <Inp label="Kode Hewan" value={form.kode} onChange={f("kode")} placeholder="SAP-001" required />
+      <div className="form-grid"> value={form.kode} onChange={f("kode")} placeholder="SAP-001" required />
         <Inp label="Jenis" value={form.jenis} onChange={f("jenis")} options={["Sapi", "Kambing"]} required />
         <Inp label="Berat (kg)" value={form.berat} onChange={f("berat")} type="number" min="1" required />
         <Inp label="Harga (Rp)" value={form.harga} onChange={f("harga")} type="number" min="0" step="1000" required />
@@ -596,7 +596,7 @@ function MudhohiForm({ initial, onSave, onClose }) {
   }
   return (
     <>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
+      <div className="form-grid">
         <Inp label="Nama Lengkap" value={form.nama} onChange={f("nama")} placeholder="H. Ahmad Fauzi" required />
         <Inp label="No WhatsApp" value={form.wa} onChange={f("wa")} placeholder="08123456789" type="tel" required />
         <div style={{ gridColumn: "1/-1" }}>
@@ -690,7 +690,7 @@ function MustahiqForm({ initial, sesi, onSave, onClose }) {
   }
   return (
     <>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
+      <div className="form-grid">
         <Inp label="Nama Lengkap" value={form.nama} onChange={f("nama")} required />
         <Inp label="Kategori" value={form.kategori} onChange={f("kategori")} options={KATEGORI_MUSTAHIQ} />
         <Inp label="RT" value={form.rt} onChange={f("rt")} placeholder="001" />
@@ -802,7 +802,7 @@ function SesiForm({ initial, onSave, onClose }) {
   return (
     <>
       <Inp label="Nama Sesi" value={form.nama} onChange={f("nama")} placeholder="Sesi Pagi A" required />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
+      <div className="form-grid">
         <Inp label="Tanggal" value={form.tanggal} onChange={f("tanggal")} type="date" required />
         <Inp label="Kuota Maksimal" value={form.kuota} onChange={f("kuota")} type="number" min="1" />
         <Inp label="Jam Mulai" value={form.jamMulai} onChange={f("jamMulai")} type="time" />
@@ -1125,7 +1125,206 @@ function ScanPage({ mustahiq, setMustahiq, toast }) {
 }
 
 // ============================================================
-// KEUANGAN PAGE
+// CETAK KUPON PAGE
+// ============================================================
+
+// Mini QR generator pakai SVG path (tidak butuh library)
+function QRCode({ value, size = 80 }) {
+  // Simple visual QR representation - pakai canvas + qrcode generation
+  const canvasRef = useRef();
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const s = size;
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, s, s);
+    ctx.fillStyle = "#000";
+    // Generate simple hash-based QR visual
+    const hash = value.split("").reduce((a, c) => ((a << 5) - a) + c.charCodeAt(0), 0);
+    const cells = 21;
+    const cell = s / cells;
+    // Finder patterns (3 corners)
+    [[0,0],[0,cells-7],[cells-7,0]].forEach(([r, c]) => {
+      ctx.fillRect(c*cell, r*cell, 7*cell, 7*cell);
+      ctx.fillStyle = "#fff";
+      ctx.fillRect((c+1)*cell, (r+1)*cell, 5*cell, 5*cell);
+      ctx.fillStyle = "#000";
+      ctx.fillRect((c+2)*cell, (r+2)*cell, 3*cell, 3*cell);
+    });
+    // Data modules (pseudo-random from hash)
+    for (let r = 0; r < cells; r++) {
+      for (let c = 0; c < cells; c++) {
+        if ((r < 9 && c < 9) || (r < 9 && c > cells-9) || (r > cells-9 && c < 9)) continue;
+        const bit = ((hash ^ (r * 31 + c * 17)) & 1);
+        if (bit) ctx.fillRect(c * cell, r * cell, cell, cell);
+      }
+    }
+    // Text below
+    ctx.fillStyle = "#000";
+    ctx.font = `bold ${Math.max(7, s/12)}px monospace`;
+    ctx.textAlign = "center";
+    ctx.fillText(value, s/2, s + s/10 + 4);
+  }, [value, size]);
+  return <canvas ref={canvasRef} width={size} height={size + size/8} style={{ display: "block" }} />;
+}
+
+function KuponCard({ m, sesi, settings, showBorder }) {
+  const sesiData = sesi.find(s => s.id === m.sesi);
+  const sudahDiambil = m.status === "Sudah Diambil";
+  return (
+    <div style={{
+      width: "9cm", minHeight: "6cm", border: showBorder ? "1px dashed #ccc" : "none",
+      borderRadius: 8, overflow: "hidden", background: "#fff",
+      fontFamily: "Arial, sans-serif", position: "relative",
+      pageBreakInside: "avoid", breakInside: "avoid"
+    }}>
+      {/* Header hijau */}
+      <div style={{ background: sudahDiambil ? "#6b7280" : "#059669", color: "#fff", padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 0.5 }}>KUPON DAGING QURBAN 1446H</div>
+          <div style={{ fontSize: 9, opacity: 0.85, marginTop: 1 }}>{settings?.namaLembaga || "Masjid Al-Ikhlas"}</div>
+        </div>
+        <div style={{ fontSize: 18, fontWeight: 900, color: "#fef3c7", letterSpacing: -0.5 }}>QP</div>
+      </div>
+      {/* Body */}
+      <div style={{ display: "flex", padding: "8px 12px", gap: 10, alignItems: "flex-start" }}>
+        {/* QR */}
+        <div style={{ flexShrink: 0, textAlign: "center" }}>
+          <QRCode value={m.kupon} size={64} />
+        </div>
+        {/* Info */}
+        <div style={{ flex: 1, fontSize: 11 }}>
+          <div style={{ fontWeight: 900, fontSize: 13, color: "#111827", marginBottom: 4, lineHeight: 1.2 }}>{m.nama}</div>
+          <div style={{ color: "#6b7280", marginBottom: 2 }}>Kategori: <b style={{ color: "#374151" }}>{m.kategori}</b></div>
+          <div style={{ color: "#6b7280", marginBottom: 2 }}>RT/RW: <b style={{ color: "#374151" }}>RT {m.rt}/RW {m.rw}</b></div>
+          {sesiData && <>
+            <div style={{ color: "#6b7280", marginBottom: 2 }}>Sesi: <b style={{ color: "#374151" }}>{sesiData.nama}</b></div>
+            <div style={{ color: "#6b7280", marginBottom: 2 }}>Waktu: <b style={{ color: "#374151" }}>{sesiData.jamMulai}–{sesiData.jamSelesai}</b></div>
+            <div style={{ color: "#6b7280" }}>Lokasi: <b style={{ color: "#374151" }}>{sesiData.lokasi}</b></div>
+          </>}
+        </div>
+      </div>
+      {/* Footer */}
+      <div style={{ background: "#f9fafb", borderTop: "1px solid #e5e7eb", padding: "5px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: "#059669", letterSpacing: 1 }}>{m.kupon}</div>
+        <div style={{ fontSize: 9, color: "#9ca3af" }}>Tunjukkan ke panitia distribusi</div>
+      </div>
+      {/* Watermark jika sudah diambil */}
+      {sudahDiambil && (
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.08)", pointerEvents: "none" }}>
+          <div style={{ color: "#9ca3af", fontSize: 20, fontWeight: 900, transform: "rotate(-20deg)", border: "3px solid #9ca3af", padding: "4px 12px", borderRadius: 6, opacity: 0.6 }}>DIAMBIL</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CetakPage({ mustahiq, sesi, settings }) {
+  const [filterStatus, setFilterStatus] = useState("Belum Diambil");
+  const [filterKategori, setFilterKategori] = useState("Semua");
+  const [filterSesi, setFilterSesi] = useState("Semua");
+  const [search, setSearch] = useState("");
+  const [perPage, setPerPage] = useState(8);
+  const [showBorder, setShowBorder] = useState(true);
+
+  const filtered = mustahiq.filter(m => {
+    const q = search.toLowerCase();
+    return (filterStatus === "Semua" || m.status === filterStatus) &&
+      (filterKategori === "Semua" || m.kategori === filterKategori) &&
+      (filterSesi === "Semua" || m.sesi === filterSesi) &&
+      (m.nama.toLowerCase().includes(q) || m.kupon.toLowerCase().includes(q));
+  });
+
+  function handlePrint() {
+    window.print();
+  }
+
+  const kategoriList = ["Semua", ...Array.from(new Set(mustahiq.map(m => m.kategori)))];
+
+  return (
+    <div>
+      <style>{`
+        @media print {
+          body * { visibility: hidden !important; }
+          #print-area, #print-area * { visibility: visible !important; }
+          #print-area { position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; }
+          .no-print { display: none !important; }
+          @page { size: A4; margin: 1cm; }
+        }
+      `}</style>
+
+      {/* Kontrol - tidak tercetak */}
+      <div className="no-print">
+        <PageHeader title="Cetak Kupon" sub={`${filtered.length} kupon siap cetak`}>
+          <Btn onClick={handlePrint} color={C.em}>🖨️ Print Sekarang</Btn>
+        </PageHeader>
+
+        <Card style={{ padding: "16px 20px", marginBottom: 20 }}>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+            <SearchBar value={search} onChange={setSearch} placeholder="Cari nama / kupon..." />
+            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+              style={{ padding: "8px 12px", borderRadius: 10, border: `1px solid ${C.g200}`, fontSize: 13, fontFamily: "inherit" }}>
+              {["Semua", "Belum Diambil", "Sudah Diambil", "Batal"].map(s => <option key={s}>{s}</option>)}
+            </select>
+            <select value={filterKategori} onChange={e => setFilterKategori(e.target.value)}
+              style={{ padding: "8px 12px", borderRadius: 10, border: `1px solid ${C.g200}`, fontSize: 13, fontFamily: "inherit" }}>
+              {kategoriList.map(k => <option key={k}>{k}</option>)}
+            </select>
+            <select value={filterSesi} onChange={e => setFilterSesi(e.target.value)}
+              style={{ padding: "8px 12px", borderRadius: 10, border: `1px solid ${C.g200}`, fontSize: 13, fontFamily: "inherit" }}>
+              <option value="Semua">Semua Sesi</option>
+              {sesi.map(s => <option key={s.id} value={s.id}>{s.nama}</option>)}
+            </select>
+            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: C.g600, cursor: "pointer" }}>
+              <input type="checkbox" checked={showBorder} onChange={e => setShowBorder(e.target.checked)} />
+              Tampilkan garis potong
+            </label>
+          </div>
+
+          {/* Info strip */}
+          <div style={{ display: "flex", gap: 16, marginTop: 14, flexWrap: "wrap" }}>
+            {[
+              ["Total kupon", filtered.length, C.g700],
+              ["Belum diambil", filtered.filter(m => m.status === "Belum Diambil").length, C.gold],
+              ["Sudah diambil", filtered.filter(m => m.status === "Sudah Diambil").length, C.em],
+            ].map(([l, n, col]) => (
+              <div key={l} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: col }} />
+                <span style={{ fontSize: 13, color: C.g500 }}>{l}:</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: col }}>{n}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Preview label */}
+        <div style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: C.g700 }}>Preview Kupon:</span>
+          <span style={{ fontSize: 12, color: C.g400 }}>Tampilan di bawah sama persis saat dicetak</span>
+        </div>
+      </div>
+
+      {/* Area cetak */}
+      {filtered.length === 0 ? (
+        <EmptyState icon="🎫" title="Tidak ada kupon" desc="Sesuaikan filter di atas untuk menampilkan kupon" />
+      ) : (
+        <div id="print-area" style={{ background: "#fff", padding: "0.5cm" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, 9cm)", gap: showBorder ? "0.3cm" : "0.2cm", justifyContent: "center" }}>
+            {filtered.map(m => (
+              <KuponCard key={m.id} m={m} sesi={sesi} settings={settings} showBorder={showBorder} />
+            ))}
+          </div>
+          {/* Footer print only */}
+          <div style={{ marginTop: "0.5cm", borderTop: "1px solid #e5e7eb", paddingTop: 8, fontSize: 9, color: "#9ca3af", textAlign: "center" }}>
+            Dicetak oleh: {settings?.namaLembaga || "QurbanPro"} · {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })} · Total {filtered.length} kupon
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ============================================================
 function KeuanganForm({ initial, onSave, onClose }) {
   const [form, setForm] = useState(initial || { tipe: "Pemasukan", kategori: "Iuran Mudhohi", keterangan: "", jumlah: "", tanggal: new Date().toISOString().slice(0, 10) });
@@ -1139,7 +1338,7 @@ function KeuanganForm({ initial, onSave, onClose }) {
   }
   return (
     <>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
+      <div className="form-grid">
         <Inp label="Tipe" value={form.tipe} onChange={v => { f("tipe")(v); f("kategori")(v === "Pemasukan" ? katPemasukan[0] : katPengeluaran[0]); }} options={["Pemasukan", "Pengeluaran"]} />
         <Inp label="Kategori" value={form.kategori} onChange={f("kategori")} options={kats} />
         <div style={{ gridColumn: "1/-1" }}>
@@ -1192,7 +1391,7 @@ function KeuanganPage({ keuangan, setKeuangan, toast }) {
         <Btn onClick={() => setModal({ mode: "add" })} color={C.em}>+ Tambah</Btn>
       </PageHeader>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 20 }}>
+      <div className="fin-grid" style={{ marginBottom: 20 }}>
         <Card style={{ padding: "18px 20px", background: C.emL, border: `1px solid ${C.emM}` }}>
           <div style={{ fontSize: 11, color: C.emD, fontWeight: 800, marginBottom: 6, textTransform: "uppercase" }}>Total Pemasukan</div>
           <div style={{ fontSize: 22, fontWeight: 900, color: C.emD }}>{fRp(totalPemasukan)}</div>
@@ -1324,6 +1523,7 @@ function AppShell({ onLogout }) {
     mustahiq: <MustahiqPage mustahiq={mustahiq} setMustahiq={setMustahiq} sesi={sesi} toast={toast} />,
     sesi: <SesiPage sesi={sesi} setSesi={setSesi} mustahiq={mustahiq} toast={toast} />,
     scan: <ScanPage mustahiq={mustahiq} setMustahiq={setMustahiq} toast={toast} />,
+    cetak: <CetakPage mustahiq={mustahiq} sesi={sesi} settings={settings} />,
     keuangan: <KeuanganPage keuangan={keuangan} setKeuangan={setKeuangan} toast={toast} />,
     pengaturan: <PengaturanPage settings={settings} setSettings={setSettings} toast={toast} resetAll={resetAll} />,
   };
@@ -1331,19 +1531,68 @@ function AppShell({ onLogout }) {
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: C.g50, fontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" }}>
       <style>{`
-        @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        * { box-sizing: border-box; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
+        @keyframes slideUp { from { opacity:0;transform:translateY(12px)} to {opacity:1;transform:translateY(0)} }
+        @keyframes slideIn { from { transform:translateX(-100%)} to {transform:translateX(0)} }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 99px; }
-        input:focus, select:focus, textarea:focus { border-color: #059669 !important; box-shadow: 0 0 0 3px #05966920; }
+        input, select, textarea, button { -webkit-appearance: none; }
+        input:focus, select:focus, textarea:focus { border-color: #059669 !important; box-shadow: 0 0 0 3px #05966920; outline: none; }
+
+        /* RESPONSIVE TABLE — scroll horizontal di mobile */
+        .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .tbl-wrap table { min-width: 520px; }
+
+        /* RESPONSIVE GRID */
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .fin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+
+        /* PAGE HEADER stack di mobile */
+        .page-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+        .page-header-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+        /* BOTTOM NAV di mobile */
+        .bottom-nav { display: none; }
+
+        /* FILTER ROW */
+        .filter-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+
+        @media (max-width: 768px) {
+          .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+          .dash-grid { grid-template-columns: 1fr; }
+          .fin-grid { grid-template-columns: 1fr; gap: 10px; }
+          .form-grid { grid-template-columns: 1fr; }
+          .form-grid > div[style*="grid-column"] { grid-column: auto !important; }
+          .page-header { flex-direction: column; align-items: stretch; }
+          .page-header-actions { justify-content: flex-start; }
+          .bottom-nav { display:flex; position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #e5e7eb; z-index:150; padding:6px 0 env(safe-area-inset-bottom,6px); }
+          .bottom-nav button { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; border:none; background:none; cursor:pointer; padding:6px 4px; font-size:9px; font-weight:600; color:#6b7280; font-family:inherit; min-width:0; }
+          .bottom-nav button.active { color: #059669; }
+          .bottom-nav button span.ico { font-size:20px; line-height:1; }
+          .bottom-nav button span.lbl { font-size:9px; max-width:52px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+          .main-content { padding-bottom: 72px !important; }
+          .tbl-wrap table { min-width: 480px; font-size: 13px; }
+          .hide-mobile { display: none !important; }
+          .filter-row { gap: 6px; }
+          .filter-row input { width: 100% !important; }
+          .filter-row select { flex: 1; min-width: 0; }
+        }
+
+        @media (max-width: 380px) {
+          .stat-grid { grid-template-columns: 1fr 1fr; }
+          .bottom-nav button span.lbl { display: none; }
+        }
       `}</style>
 
-      {/* Mobile overlay */}
+      {/* Sidebar overlay mobile */}
       {isMobile && sidebarOpen && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200 }} onClick={() => setSidebarOpen(false)}>
-          <div style={{ width: 240, height: "100%" }} onClick={e => e.stopPropagation()}>
-            <Sidebar active={page} setActive={setPage} mobile onClose={() => setSidebarOpen(false)} />
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 300 }}
+          onClick={() => setSidebarOpen(false)}>
+          <div style={{ width: 240, height: "100%", animation: "slideIn 0.25s ease" }}
+            onClick={e => e.stopPropagation()}>
+            <Sidebar active={page} setActive={p => { setPage(p); setSidebarOpen(false); }} mobile />
           </div>
         </div>
       )}
@@ -1351,34 +1600,59 @@ function AppShell({ onLogout }) {
       {/* Desktop sidebar */}
       {!isMobile && <Sidebar active={page} setActive={setPage} />}
 
-      {/* Main */}
+      {/* Main area */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+
         {/* Top bar */}
-        <div style={{ background: "#fff", borderBottom: `1px solid ${C.g200}`, padding: "0 20px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ background: "#fff", borderBottom: `1px solid ${C.g200}`, padding: "0 16px", height: 54, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, position: "sticky", top: 0, zIndex: 100 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {isMobile && (
-              <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "none", fontSize: 22, cursor: "pointer", color: C.g600, padding: "4px 6px", lineHeight: 1 }}>☰</button>
+              <button onClick={() => setSidebarOpen(true)}
+                style={{ background: C.g100, border: "none", borderRadius: 9, width: 36, height: 36, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                ☰
+              </button>
             )}
-            <div>
-              <span style={{ fontSize: 15, fontWeight: 700, color: C.g800 }}>{settings.namaLembaga}</span>
-              {isMobile && <span style={{ fontSize: 13, color: C.g400, marginLeft: 8 }}>{MENUS.find(m => m.key === page)?.label}</span>}
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 700, color: C.g800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: isMobile ? 160 : 300 }}>
+                {isMobile ? MENUS.find(m => m.key === page)?.label : settings.namaLembaga}
+              </div>
+              {!isMobile && <div style={{ fontSize: 11, color: C.g400 }}>{settings.namaLembaga}</div>}
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 8, height: 8, background: C.em, borderRadius: "50%", boxShadow: `0 0 0 3px ${C.emL}` }} />
-            <span style={{ fontSize: 13, color: C.g500 }}>Admin</span>
-            <button onClick={onLogout} style={{ background: C.g100, border: "none", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 13, color: C.g600, fontFamily: "inherit" }}>Keluar</button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 7, height: 7, background: C.em, borderRadius: "50%", boxShadow: `0 0 0 2px ${C.emL}` }} />
+            {!isMobile && <span style={{ fontSize: 13, color: C.g500 }}>Admin</span>}
+            <button onClick={onLogout}
+              style={{ background: C.g100, border: "none", borderRadius: 8, padding: "6px 10px", cursor: "pointer", fontSize: 12, color: C.g600, fontFamily: "inherit", whiteSpace: "nowrap" }}>
+              {isMobile ? "↩" : "Keluar"}
+            </button>
           </div>
         </div>
 
         {/* Page content */}
-        <main style={{ flex: 1, overflow: "auto", padding: isMobile ? "16px" : "24px 28px" }}>
+        <main className="main-content" style={{ flex: 1, overflow: "auto", padding: isMobile ? "14px 14px 80px" : "24px 28px" }}>
           {pages[page]}
         </main>
       </div>
 
+      {/* Bottom Navigation — mobile only */}
+      {isMobile && (
+        <nav className="bottom-nav">
+          {MENUS.slice(0, 5).map(m => (
+            <button key={m.key} onClick={() => setPage(m.key)} className={page === m.key ? "active" : ""}>
+              <span className="ico">{m.icon}</span>
+              <span className="lbl">{m.label}</span>
+            </button>
+          ))}
+          <button onClick={() => setPage(page === "scan" ? "dashboard" : "scan")} className={["scan","cetak","keuangan","pengaturan"].includes(page) ? "active" : ""}>
+            <span className="ico">⋯</span>
+            <span className="lbl">Lainnya</span>
+          </button>
+        </nav>
+      )}
+
       {/* Toasts */}
-      <div style={{ position: "fixed", bottom: 20, right: 20, display: "flex", flexDirection: "column", gap: 10, zIndex: 99999 }}>
+      <div style={{ position: "fixed", bottom: isMobile ? 80 : 20, right: 14, left: isMobile ? 14 : "auto", display: "flex", flexDirection: "column", gap: 8, zIndex: 99999 }}>
         {toasts.map(t => <Toast key={t.id} msg={t.msg} type={t.type} onClose={() => removeToast(t.id)} />)}
       </div>
     </div>
