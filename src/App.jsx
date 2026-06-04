@@ -1331,61 +1331,117 @@ function CetakPage({ mustahiq, sesi, settings }) {
 // ============================================================
 // SERTIFIKAT PAGE
 // ============================================================
-function SertifikatCard({ m, hewan, settings, noSertifikat, showBorder }) {
+function SertifikatCard({ m, hewan, settings, noSertifikat, forPrint }) {
   const tgl = settings?.tanggal
     ? new Date(settings.tanggal).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
     : new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
   const hewanData = hewan ? `1 ekor ${hewan.jenis} (${hewan.berat} kg)` : m.jenis === "Sapi" ? "1/7 ekor Sapi" : "1 ekor Kambing";
+
+  const cardStyle = forPrint ? {
+    width: "100%", height: "100vh",
+    background: "#fff",
+    fontFamily: "Georgia, 'Times New Roman', serif",
+    position: "relative", overflow: "hidden",
+    display: "flex", alignItems: "stretch",
+    pageBreakAfter: "always", breakAfter: "page",
+    pageBreakInside: "avoid", breakInside: "avoid",
+  } : {
+    width: "100%", maxWidth: "820px", height: "auto", minHeight: "320px",
+    background: "#fff",
+    fontFamily: "Georgia, 'Times New Roman', serif",
+    position: "relative", overflow: "hidden",
+    display: "flex", alignItems: "stretch",
+    border: "1px solid #e5e7eb", borderRadius: 8,
+  };
+
   return (
-    <div style={{ width: "19cm", minHeight: "12.5cm", background: "#fff", fontFamily: "Georgia,'Times New Roman',serif", border: showBorder ? "1px dashed #ccc" : "none", borderRadius: 4, pageBreakInside: "avoid", breakInside: "avoid", position: "relative", overflow: "hidden" }}>
-      <div style={{ position: "absolute", top: 10, left: 10, width: 36, height: 36, opacity: 0.2 }}>
-        <svg viewBox="0 0 36 36"><path d="M2 2 L2 18 M2 2 L18 2" stroke="#059669" strokeWidth="3" fill="none" strokeLinecap="round"/></svg>
-      </div>
-      <div style={{ position: "absolute", top: 10, right: 10, width: 36, height: 36, opacity: 0.2 }}>
-        <svg viewBox="0 0 36 36"><path d="M34 2 L34 18 M34 2 L18 2" stroke="#059669" strokeWidth="3" fill="none" strokeLinecap="round"/></svg>
-      </div>
-      <div style={{ position: "absolute", bottom: 10, left: 10, width: 36, height: 36, opacity: 0.2 }}>
-        <svg viewBox="0 0 36 36"><path d="M2 34 L2 18 M2 34 L18 34" stroke="#059669" strokeWidth="3" fill="none" strokeLinecap="round"/></svg>
-      </div>
-      <div style={{ position: "absolute", bottom: 10, right: 10, width: 36, height: 36, opacity: 0.2 }}>
-        <svg viewBox="0 0 36 36"><path d="M34 34 L34 18 M34 34 L18 34" stroke="#059669" strokeWidth="3" fill="none" strokeLinecap="round"/></svg>
-      </div>
-      <div style={{ margin: "10px", border: "1.5px solid #059669", borderRadius: 6, padding: "20px 28px", minHeight: "calc(12.5cm - 20px)" }}>
-        <div style={{ textAlign: "center", marginBottom: 14 }}>
-          <div style={{ fontSize: 20, color: "#d97706", marginBottom: 4 }}>☽</div>
-          <div style={{ fontSize: 10, letterSpacing: 3, color: "#059669", fontFamily: "Arial,sans-serif", fontWeight: 700, textTransform: "uppercase", marginBottom: 3 }}>{settings?.namaLembaga || "Masjid Al-Ikhlas"}</div>
-          <h1 style={{ fontSize: 26, fontWeight: 700, color: "#d97706", margin: "3px 0", letterSpacing: 1 }}>Sertifikat Qurban</h1>
-          <div style={{ fontSize: 11, color: "#6b7280", fontFamily: "Arial,sans-serif", marginTop: 1 }}>Idul Adha 1446 H / {tgl}</div>
-          <div style={{ width: 80, height: 2, background: "linear-gradient(90deg,transparent,#059669,transparent)", margin: "10px auto 0" }} />
+    <div style={cardStyle}>
+      {/* Background pattern subtle */}
+      <div style={{ position:"absolute", inset:0, backgroundImage:"radial-gradient(circle at 20% 80%, #f0fdf420 0%, transparent 50%), radial-gradient(circle at 80% 20%, #fef3c720 0%, transparent 50%)", pointerEvents:"none" }} />
+
+      {/* Ornamen sudut */}
+      {[[10,10,"M4 4 L4 28 M4 4 L28 4"],[10,"auto","M4 4 L4 28 M4 4 L28 4"],["auto",10,"M4 28 L4 4 M4 28 L28 28"],["auto","auto","M28 4 L28 28 M28 4 L4 4"]].map(([t,r,d],i)=>(
+        <div key={i} style={{ position:"absolute", top:t, right:i===1||i===3?10:"auto", bottom:i===2||i===3?10:"auto", left:i===0||i===2?10:"auto", width:52, height:52, opacity:0.15 }}>
+          <svg viewBox="0 0 32 32" style={{ width:"100%", height:"100%" }}>
+            <path d={["M4 4 L4 22 M4 4 L22 4","M28 4 L28 22 M28 4 L10 4","M4 28 L4 10 M4 28 L22 28","M28 28 L28 10 M28 28 L10 28"][i]} stroke="#059669" strokeWidth="3" fill="none" strokeLinecap="round"/>
+          </svg>
         </div>
-        <div style={{ textAlign: "center", margin: "12px 0" }}>
-          <div style={{ fontSize: 11, color: "#6b7280", fontFamily: "Arial,sans-serif", marginBottom: 6 }}>Dengan ini menyatakan bahwa</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: "#111827", marginBottom: 3 }}>{m.nama}</div>
+      ))}
+
+      {/* Border dalam */}
+      <div style={{ margin:"16px", border:"2px solid #059669", borderRadius:8, flex:1, display:"flex", flexDirection:"column", padding:"28px 48px", justifyContent:"space-between" }}>
+
+        {/* Header */}
+        <div style={{ textAlign:"center" }}>
+          <div style={{ fontSize:28, color:"#d97706", lineHeight:1, marginBottom:6 }}>☽</div>
+          <div style={{ fontSize:11, letterSpacing:4, color:"#059669", fontFamily:"Arial,sans-serif", fontWeight:800, textTransform:"uppercase", marginBottom:6 }}>
+            {settings?.namaLembaga || "Masjid Al-Ikhlas"}
+          </div>
+          <h1 style={{ fontSize:38, fontWeight:700, color:"#d97706", margin:"4px 0 6px", letterSpacing:2, lineHeight:1.1 }}>
+            Sertifikat Qurban
+          </h1>
+          <div style={{ fontSize:13, color:"#6b7280", fontFamily:"Arial,sans-serif" }}>
+            Idul Adha 1446 H &nbsp;/&nbsp; {tgl}
+          </div>
+          <div style={{ display:"flex", alignItems:"center", gap:10, justifyContent:"center", margin:"12px 0 0" }}>
+            <div style={{ flex:1, height:1, background:"linear-gradient(90deg,transparent,#05966960)" }}/>
+            <div style={{ width:6, height:6, borderRadius:"50%", background:"#d97706" }}/>
+            <div style={{ flex:1, height:1, background:"linear-gradient(90deg,#05966960,transparent)" }}/>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div style={{ textAlign:"center", padding:"0 40px" }}>
+          <div style={{ fontSize:13, color:"#9ca3af", fontFamily:"Arial,sans-serif", marginBottom:10, letterSpacing:1 }}>
+            — Dengan ini menyatakan bahwa —
+          </div>
+          <div style={{ fontSize:32, fontWeight:700, color:"#111827", marginBottom:6, lineHeight:1.2 }}>
+            {m.nama}
+          </div>
           {m.namaAtas && m.namaAtas !== m.nama && (
-            <div style={{ fontSize: 11, color: "#6b7280", fontFamily: "Arial,sans-serif", fontStyle: "italic", marginBottom: 4 }}>atas nama: <b style={{ color: "#374151" }}>{m.namaAtas}</b></div>
+            <div style={{ fontSize:14, color:"#6b7280", fontFamily:"Arial,sans-serif", fontStyle:"italic", marginBottom:8 }}>
+              atas nama: <b style={{ color:"#374151" }}>{m.namaAtas}</b>
+            </div>
           )}
-          <div style={{ fontSize: 12, color: "#374151", fontFamily: "Arial,sans-serif", lineHeight: 1.7, maxWidth: 380, margin: "8px auto" }}>
-            telah melaksanakan ibadah qurban berupa <b style={{ color: "#059669" }}>{hewanData}</b> pada {tgl}. Semoga Allah SWT menerima amal ibadah dan menjadikannya sebagai jariyah.
+          <div style={{ fontSize:14, color:"#374151", fontFamily:"Arial,sans-serif", lineHeight:1.9, maxWidth:520, margin:"10px auto" }}>
+            telah melaksanakan ibadah qurban berupa{" "}
+            <b style={{ color:"#059669", fontSize:16 }}>{hewanData}</b>{" "}
+            pada {tgl}.<br/>
+            Semoga Allah SWT menerima amal ibadah dan menjadikannya sebagai jariyah.
           </div>
         </div>
-        <div style={{ textAlign: "center", margin: "10px 0", padding: "8px 20px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #d1fae5" }}>
-          <div style={{ fontSize: 12, color: "#065f46", fontFamily: "Georgia,serif", fontStyle: "italic" }}>"Daging-daging unta dan darahnya itu sekali-kali tidak dapat mencapai keridhaan Allah, tetapi ketakwaan dari kamulah yang dapat mencapainya."</div>
-          <div style={{ fontSize: 10, color: "#9ca3af", fontFamily: "Arial,sans-serif", marginTop: 3 }}>(QS. Al-Hajj: 37)</div>
+
+        {/* Ayat */}
+        <div style={{ textAlign:"center", padding:"12px 48px", background:"#f0fdf4", borderRadius:8, border:"1px solid #d1fae5", margin:"0 20px" }}>
+          <div style={{ fontSize:13, color:"#065f46", fontFamily:"Georgia,serif", fontStyle:"italic", lineHeight:1.7 }}>
+            "Daging-daging unta dan darahnya itu sekali-kali tidak dapat mencapai keridhaan Allah,<br/>
+            tetapi ketakwaan dari kamulah yang dapat mencapainya."
+          </div>
+          <div style={{ fontSize:11, color:"#9ca3af", fontFamily:"Arial,sans-serif", marginTop:4 }}>(QS. Al-Hajj: 37)</div>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16, padding: "0 20px", alignItems: "flex-end" }}>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 11, color: "#6b7280", fontFamily: "Arial,sans-serif", marginBottom: 28 }}>Ketua Panitia</div>
-            <div style={{ borderTop: "1px solid #374151", paddingTop: 4, fontSize: 12, fontWeight: 700, fontFamily: "Arial,sans-serif", color: "#111827" }}>{settings?.ketua || "Ketua Panitia"}</div>
+
+        {/* Footer TTD */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", padding:"0 40px" }}>
+          <div style={{ textAlign:"center", minWidth:140 }}>
+            <div style={{ fontSize:13, color:"#6b7280", fontFamily:"Arial,sans-serif", marginBottom:44 }}>Ketua Panitia</div>
+            <div style={{ borderTop:"1.5px solid #374151", paddingTop:6 }}>
+              <div style={{ fontSize:14, fontWeight:700, fontFamily:"Arial,sans-serif", color:"#111827" }}>{settings?.ketua || "Ketua Panitia"}</div>
+            </div>
           </div>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 9, color: "#9ca3af", fontFamily: "Arial,sans-serif", fontStyle: "italic" }}>No. Sertifikat</div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#059669", fontFamily: "monospace", letterSpacing: 1 }}>{noSertifikat}</div>
+          <div style={{ textAlign:"center" }}>
+            <div style={{ fontSize:10, color:"#d1d5db", fontFamily:"Arial,sans-serif", fontStyle:"italic", marginBottom:4 }}>No. Sertifikat</div>
+            <div style={{ fontSize:13, fontWeight:700, color:"#059669", fontFamily:"monospace", letterSpacing:2, padding:"4px 12px", border:"1px solid #d1fae5", borderRadius:6, background:"#f0fdf4" }}>
+              {noSertifikat}
+            </div>
           </div>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 11, color: "#6b7280", fontFamily: "Arial,sans-serif", marginBottom: 28 }}>Bendahara</div>
-            <div style={{ borderTop: "1px solid #374151", paddingTop: 4, fontSize: 12, fontWeight: 700, fontFamily: "Arial,sans-serif", color: "#111827" }}>Bendahara</div>
+          <div style={{ textAlign:"center", minWidth:140 }}>
+            <div style={{ fontSize:13, color:"#6b7280", fontFamily:"Arial,sans-serif", marginBottom:44 }}>Bendahara</div>
+            <div style={{ borderTop:"1.5px solid #374151", paddingTop:6 }}>
+              <div style={{ fontSize:14, fontWeight:700, fontFamily:"Arial,sans-serif", color:"#111827" }}>Bendahara</div>
+            </div>
           </div>
         </div>
+
       </div>
     </div>
   );
@@ -1413,7 +1469,7 @@ function SertifikatPage({ mudhohi, hewan, settings }) {
 
   return (
     <div>
-      <style>{`@media print{body *{visibility:hidden!important}#sert-print,#sert-print *{visibility:visible!important}#sert-print{position:fixed!important;top:0!important;left:0!important;width:100%!important}.no-print{display:none!important}@page{size:A4 landscape;margin:0.8cm}}`}</style>
+      <style>{`@media print{body *{visibility:hidden!important}#sert-print,#sert-print *{visibility:visible!important}#sert-print{position:fixed!important;top:0!important;left:0!important;width:100vw!important;height:auto!important}.no-print{display:none!important}@page{size:A4 landscape;margin:0}.sert-page{width:100vw;height:100vh;page-break-after:always;break-after:page;display:flex;align-items:stretch}}`}</style>
       <div className="no-print">
         <PageHeader title="Sertifikat Qurban" sub={`${toprint.length} sertifikat siap cetak`}>
           <Btn onClick={() => window.print()} color={C.em} disabled={toprint.length === 0}>🖨️ Cetak ({toprint.length})</Btn>
@@ -1531,16 +1587,16 @@ function SertifikatPage({ mudhohi, hewan, settings }) {
         </Modal>
       )}
 
-      <div id="sert-print" style={{ background:"#fff" }}>
+      <div id="sert-print">
         {mode==="individu"
           ? toprint.map((m,i)=>(
-              <div key={m.id} style={{ marginBottom:"0.5cm" }}>
-                <SertifikatCard m={m} hewan={hewanSelesai.find(h=>h.kelompok===m.kelompok)} settings={settings} noSertifikat={getNomor(i)} showBorder={showBorder}/>
+              <div key={m.id} className="sert-page">
+                <SertifikatCard m={m} hewan={hewanSelesai.find(h=>h.kelompok===m.kelompok)} settings={settings} noSertifikat={getNomor(i)} forPrint/>
               </div>
             ))
           : toprint.flatMap((k,ki)=>mudhohi.filter(m=>m.kelompok===k).map((m,i)=>(
-              <div key={m.id} style={{ marginBottom:"0.5cm" }}>
-                <SertifikatCard m={m} hewan={hewanSelesai.find(h=>h.kelompok===k)} settings={settings} noSertifikat={`SRFT/${new Date().getFullYear()}/${String(ki*10+i+1).padStart(3,"0")}`} showBorder={showBorder}/>
+              <div key={m.id} className="sert-page">
+                <SertifikatCard m={m} hewan={hewanSelesai.find(h=>h.kelompok===k)} settings={settings} noSertifikat={`SRFT/${new Date().getFullYear()}/${String(ki*10+i+1).padStart(3,"0")}`} forPrint/>
               </div>
             )))
         }
